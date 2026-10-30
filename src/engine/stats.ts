@@ -15,6 +15,8 @@ export interface Session {
   puzzlesSolved: number
   correct: number
   wrong: number
+  /** Puzzles solved fast and flawless (see engine/scoring). */
+  fast: number
 }
 
 export interface FactRecord {
@@ -102,9 +104,10 @@ export class StatsStore {
     const puzzles = ss.reduce((n, s) => n + s.puzzlesSolved, 0)
     const correct = ss.reduce((n, s) => n + s.correct, 0)
     const wrong = ss.reduce((n, s) => n + s.wrong, 0)
+    const fast = ss.reduce((n, s) => n + (s.fast ?? 0), 0)
     const bestRun = ss.filter((s) => s.mode === 'challenge').reduce((m, s) => Math.max(m, s.puzzlesSolved), 0)
     const accuracy = correct + wrong ? correct / (correct + wrong) : null
-    return { plays, puzzles, correct, wrong, bestRun, accuracy, streakDays: this.streakDays(ss) }
+    return { plays, puzzles, correct, wrong, fast, bestRun, accuracy, streakDays: this.streakDays(ss) }
   }
 
   /** Consecutive calendar days ending today (or yesterday) with at least one session. */

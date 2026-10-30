@@ -8,6 +8,7 @@
   --found: #f9dfc0;
   --good: #4caf7d;
   --bad: #e2574c;
+  --fast: #d98a00;
   --radius: 14px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   font-size: 18px;
@@ -105,6 +106,11 @@ a { color: inherit; }
 .message { min-height: 1.6em; font-size: 1.1rem; font-weight: 600; text-align: center; }
 .message.good { color: var(--good); }
 .message.bad { color: var(--bad); }
+.message.fast { color: var(--fast); animation: pop 400ms ease-out; }
+@keyframes pop { 0% { transform: scale(0.6); opacity: 0; } 60% { transform: scale(1.15); } 100% { transform: scale(1); opacity: 1; } }
+.hud .fast-count { color: var(--fast); }
+.overlay .fast-line { margin: 0; color: var(--muted); }
+.overlay .fast-line.all { color: var(--fast); font-weight: 600; }
 
 .overlay { background: var(--card); border: 2px solid var(--line); border-radius: var(--radius); padding: 24px; text-align: center; display: grid; gap: 12px; justify-items: center; }
 .overlay h2 { margin: 0; }
