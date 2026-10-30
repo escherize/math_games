@@ -83,7 +83,8 @@ a { color: inherit; }
   font-size: clamp(1.6rem, 5vw, 2.4rem); font-weight: 700; border-radius: 6px; pointer-events: none;
 }
 
-.pod { display: grid; gap: 0; border: 3px solid var(--line); background: var(--line); }
+.pod { display: grid; gap: 0; border: 2px solid var(--line); background: #fff; }
+.pod[data-size="5"] { border: 0; background: transparent; }
 .pod[data-size="4"], .pod[data-size="6"] { grid-template-columns: repeat(2, 1fr); }
 .pod[data-size="5"], .pod[data-size="9"] { grid-template-columns: repeat(3, 1fr); }
 .pod.solved { opacity: 0.85; }
@@ -92,11 +93,10 @@ a { color: inherit; }
   --size: clamp(64px, 14vw, 120px);
   width: var(--size); height: var(--size);
   display: grid; place-items: center;
-  background: #fff; border: 0; font-size: calc(var(--size) * 0.42); font-weight: 400;
-  outline: 1.5px solid var(--line);
+  background: #fff; border: 1px solid var(--line); font-size: calc(var(--size) * 0.42); font-weight: 400;
   transition: background 120ms;
 }
-.cell.blank { background: var(--bg); outline: none; pointer-events: none; }
+.cell.blank { visibility: hidden; pointer-events: none; }
 .cell.found { background: var(--found); }
 .cell.wrong { animation: shake 300ms; background: #fde3e0; }
 .pod.solved .cell:not(.found) { color: var(--muted); }

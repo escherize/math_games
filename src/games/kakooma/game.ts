@@ -7,8 +7,15 @@ import { kakoomaRules, type KakoomaRules } from './rules'
 
 type Mode = 'practice' | 'challenge'
 
-/** Plus-shaped layout for 5-cell pods: which 3x3 slots are blank. */
+/** Plus-shaped layout for 5-cell pods: which 3x3 slots are blank, and which edges of each filled slot face outward. */
 const PLUS_BLANKS = new Set([0, 2, 6, 8])
+const PLUS_EDGES: Record<number, string[]> = {
+  1: ['Top', 'Left', 'Right'],
+  3: ['Top', 'Left', 'Bottom'],
+  4: [],
+  5: ['Top', 'Right', 'Bottom'],
+  7: ['Left', 'Right', 'Bottom'],
+}
 
 const PROMPTS: Record<KakoomaRules['op'], string> = {
   add: 'In each pod, tap the number that is the sum of two others.',
@@ -143,6 +150,7 @@ export function mountKakooma(container: HTMLElement, ctx: GameContext): GameInst
       }
       const idx = ci++
       const b = el('button', 'cell', String(pod.cells[idx])) as HTMLButtonElement
+      if (pod.cells.length === 5) for (const edge of PLUS_EDGES[s]) b.style.setProperty(`border-${edge.toLowerCase()}-width`, '3px')
       if (solved.has(p) && pod.targets.includes(idx)) b.classList.add('found')
       b.onclick = () => tap(p, idx, b)
       wrap.append(b)
