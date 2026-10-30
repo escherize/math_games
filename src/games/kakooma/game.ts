@@ -1,11 +1,12 @@
 import confetti from 'canvas-confetti'
 import { randomRng } from '../../engine/rng'
 import { bondKey, describeRules, loadRules, operations } from '../../engine/rules'
+import { starString, starsFor } from '../../engine/levels'
 import { isFast } from '../../engine/scoring'
 import type { GameContext, GameInstance } from '../../engine/types'
 import { el } from '../../ui/settings'
 import { generatePuzzle, type Pod, type Puzzle } from './generator'
-import { kakoomaRules, type KakoomaRules } from './rules'
+import { kakoomaRules, presets, type KakoomaRules } from './rules'
 
 type Mode = 'practice' | 'challenge'
 
@@ -28,7 +29,13 @@ const PROMPTS: Record<KakoomaRules['op'], string> = {
 }
 
 export function mountKakooma(container: HTMLElement, ctx: GameContext): GameInstance {
-  const rules = loadRules('kakooma', kakoomaRules)
+  const saved = loadRules('kakooma', kakoomaRules)
+  // A level supplies the numbers; the parent's saved rules supply the pacing.
+  const level = ctx.level
+  const rules: KakoomaRules = level
+    ? { ...(level.rules as KakoomaRules), puzzlesPerRound: saved.puzzlesPerRound, fastSeconds: saved.fastSeconds, timerSeconds: saved.timerSeconds }
+    : saved
+  const nextLevel = level ? presets[presets.findIndex((p) => p.id === level.id) + 1] : undefined
   const info = operations[rules.op]
   let mode: Mode = 'practice'
   let timeLeft = rules.timerSeconds
@@ -49,7 +56,7 @@ export function mountKakooma(container: HTMLElement, ctx: GameContext): GameInst
     endSession()
     ctx.exit()
   }
-  top.append(back, el('h1', '', 'Kakooma'))
+  top.append(back, el('h1', '', level ? `Kakooma · ${level.name}` : 'Kakooma'))
   const hud = el('div', 'hud')
   const prompt = el('div', 'prompt', PROMPTS[rules.op])
   const board = el('div', 'board')
@@ -57,7 +64,8 @@ export function mountKakooma(container: HTMLElement, ctx: GameContext): GameInst
   root.append(top, hud, prompt, board, message)
   container.append(root)
 
-  showStart()
+  if (level) start('practice')
+  else showStart()
 
   function showStart() {
     hud.innerHTML = ''
@@ -231,8 +239,25 @@ export function mountKakooma(container: HTMLElement, ctx: GameContext): GameInst
       o.append(fastLine)
     }
     const choices = el('div', 'choices')
-    const again = el('button', 'btn', mode === 'practice' ? 'Another round' : 'Try again?') as HTMLButtonElement
+    let stars = 0
+    if (level && mode === 'practice') {
+      const completed = session.puzzlesSolved >= rules.puzzlesPerRound
+      stars = starsFor({ puzzles: session.puzzlesSolved, wrong: session.wrong, fast: session.fast, completed })
+      const best = ctx.stats.levelStars(level.id)
+      if (completed) ctx.stats.recordLevel(level.id, stars)
+      const row = el('div', 'stars-row', starString(stars))
+      row.setAttribute('aria-label', `${stars} of 3 stars`)
+      o.append(row)
+      if (stars > best) o.append(el('p', 'stars-note', best === 0 ? 'Level cleared!' : 'New best!'))
+      else if (stars < 3 && stars > 0) o.append(el('p', 'stars-note', stars === 1 ? 'No wrong taps next time for two stars.' : 'Every puzzle fast for three stars.'))
+    }
+    const again = el('button', stars >= 1 && nextLevel ? 'btn secondary' : 'btn', mode === 'practice' ? 'Another round' : 'Try again?') as HTMLButtonElement
     again.onclick = () => start(mode)
+    if (level && stars >= 1 && nextLevel) {
+      const next = el('button', 'btn', `Next level: ${nextLevel.name}`) as HTMLButtonElement
+      next.onclick = () => ctx.openLevel(nextLevel.id)
+      choices.append(next)
+    }
     const home = el('button', 'btn secondary', 'Games') as HTMLButtonElement
     home.onclick = ctx.exit
     choices.append(again, home)
@@ -259,6 +284,7 @@ export function mountKakooma(container: HTMLElement, ctx: GameContext): GameInst
       correct: session.correct,
       wrong: session.wrong,
       fast: session.fast,
+      levelId: level?.id,
     })
   }
 

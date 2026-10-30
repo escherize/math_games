@@ -35,6 +35,28 @@ describe('StatsStore', () => {
     expect(sum.streakDays).toBe(1)
   })
 
+  it('keeps the best stars per level and persists them', () => {
+    const storage = memStorage()
+    const a = new StatsStore(storage)
+    a.recordLevel('addto3', 2)
+    a.recordLevel('addto3', 1)
+    a.recordLevel('addto5', 3)
+    const b = new StatsStore(storage)
+    expect(b.levelStars('addto3')).toBe(2)
+    expect(b.levelStars('addto5')).toBe(3)
+    expect(b.levelStars('never')).toBe(0)
+    expect(b.totalStars()).toBe(5)
+  })
+
+  it('reads a stats blob saved before levels existed', () => {
+    const storage = memStorage()
+    storage.setItem('math-games.stats.v1', JSON.stringify({ version: 1, sessions: [], facts: {} }))
+    const s = new StatsStore(storage)
+    expect(s.totalStars()).toBe(0)
+    s.recordLevel('addto3', 1)
+    expect(s.levelStars('addto3')).toBe(1)
+  })
+
   it('ranks weakest facts', () => {
     const s = new StatsStore(memStorage())
     for (let i = 0; i < 3; i++) s.recordAttempt({ fact: '2+2', correct: true, ms: 800 })

@@ -17,6 +17,15 @@ export interface Session {
   wrong: number
   /** Puzzles solved fast and flawless (see engine/scoring). */
   fast: number
+  /** The level this run was, if it was a level rather than free play. */
+  levelId?: string
+}
+
+export interface LevelRecord {
+  /** Best stars earned on this level. */
+  stars: number
+  /** Completed rounds on this level. */
+  plays: number
 }
 
 export interface FactRecord {
@@ -37,6 +46,7 @@ interface StatsData {
   version: 1
   sessions: Session[]
   facts: Record<string, FactRecord>
+  levels: Record<string, LevelRecord>
 }
 
 const KEY = 'math-games.stats.v1'
@@ -58,12 +68,12 @@ export class StatsStore {
       const raw = this.storage?.getItem(KEY)
       if (raw) {
         const parsed = JSON.parse(raw) as StatsData
-        if (parsed.version === 1) return parsed
+        if (parsed.version === 1) return { ...parsed, levels: parsed.levels ?? {} }
       }
     } catch {
       /* corrupt or unavailable storage: start fresh */
     }
-    return { version: 1, sessions: [], facts: {} }
+    return { version: 1, sessions: [], facts: {}, levels: {} }
   }
 
   private save() {
@@ -88,6 +98,23 @@ export class StatsStore {
   recordSession(s: Session) {
     this.data.sessions.push(s)
     this.save()
+  }
+
+  /** A completed level round: keeps the best stars and counts the play. */
+  recordLevel(levelId: string, stars: number) {
+    const l = this.data.levels[levelId] ?? { stars: 0, plays: 0 }
+    l.plays += 1
+    l.stars = Math.max(l.stars, stars)
+    this.data.levels[levelId] = l
+    this.save()
+  }
+
+  levelStars(levelId: string): number {
+    return this.data.levels[levelId]?.stars ?? 0
+  }
+
+  totalStars(): number {
+    return Object.values(this.data.levels).reduce((n, l) => n + l.stars, 0)
   }
 
   get sessions(): readonly Session[] {
@@ -134,7 +161,7 @@ export class StatsStore {
   }
 
   reset() {
-    this.data = { version: 1, sessions: [], facts: {} }
+    this.data = { version: 1, sessions: [], facts: {}, levels: {} }
     this.save()
   }
 }
