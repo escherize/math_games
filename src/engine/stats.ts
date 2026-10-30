@@ -12,7 +12,6 @@ export interface Session {
   mode: string
   startedAt: number
   durationMs: number
-  levelReached: number
   puzzlesSolved: number
   correct: number
   wrong: number
@@ -103,9 +102,9 @@ export class StatsStore {
     const puzzles = ss.reduce((n, s) => n + s.puzzlesSolved, 0)
     const correct = ss.reduce((n, s) => n + s.correct, 0)
     const wrong = ss.reduce((n, s) => n + s.wrong, 0)
-    const bestLevel = ss.reduce((m, s) => Math.max(m, s.levelReached), 0)
+    const bestRun = ss.filter((s) => s.mode === 'challenge').reduce((m, s) => Math.max(m, s.puzzlesSolved), 0)
     const accuracy = correct + wrong ? correct / (correct + wrong) : null
-    return { plays, puzzles, correct, wrong, bestLevel, accuracy, streakDays: this.streakDays(ss) }
+    return { plays, puzzles, correct, wrong, bestRun, accuracy, streakDays: this.streakDays(ss) }
   }
 
   /** Consecutive calendar days ending today (or yesterday) with at least one session. */

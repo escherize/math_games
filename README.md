@@ -19,7 +19,7 @@ npm run build    # typecheck + bundle to dist/
 
 - **Rules a parent sets.** Each game declares a `RulesSpec`: defaults, a field schema, presets, and a `validate` function. The hub renders the "Parent settings" screen from the schema and stores the chosen rules in localStorage. Number-bond games share a core (`op`, `min`, `max`, `maxResult`, `step`) and add their own fields.
 - **Operations.** Addition, subtraction, multiplication, division, exponents. Subtraction and division reuse the addition and multiplication bonds; the player finds a part instead of the whole.
-- **History.** `StatsStore` records a session per run (level reached, puzzles, right, wrong, mode) and an attempt per tap keyed by bond (`3+4`, `4×6`, `2^3`) with a running mean time. The hub shows plays, puzzles, accuracy, best level, day streak, and the weakest bonds.
+- **History.** `StatsStore` records a session per run (mode, puzzles, right, wrong) and an attempt per tap keyed by bond (`3+4`, `4×6`, `2^3`) with a running mean time. The hub shows plays, puzzles, accuracy, best challenge run, day streak, and the weakest bonds.
 
 ## Layout
 

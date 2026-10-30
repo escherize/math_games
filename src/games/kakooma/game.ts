@@ -1,3 +1,4 @@
+import confetti from 'canvas-confetti'
 import { randomRng } from '../../engine/rng'
 import { bondKey, describeRules, loadRules, operations } from '../../engine/rules'
 import type { GameContext, GameInstance } from '../../engine/types'
@@ -29,14 +30,13 @@ export function mountKakooma(container: HTMLElement, ctx: GameContext): GameInst
   const rules = loadRules('kakooma', kakoomaRules)
   const info = operations[rules.op]
   let mode: Mode = 'practice'
-  let level = 1
-  let puzzlesLeft = rules.puzzlesPerLevel
   let timeLeft = rules.timerSeconds
   let timer: number | undefined
+  let pending: number | undefined
   let puzzle: Puzzle | null = null
   let puzzleShownAt = 0
   let solved = new Set<number>()
-  const session = { startedAt: Date.now(), puzzlesSolved: 0, correct: 0, wrong: 0, levelReached: 1 }
+  const session = { startedAt: Date.now(), puzzlesSolved: 0, correct: 0, wrong: 0 }
   let sessionRecorded = false
 
   container.innerHTML = ''
@@ -63,7 +63,13 @@ export function mountKakooma(container: HTMLElement, ctx: GameContext): GameInst
     message.textContent = ''
     const o = el('div', 'overlay')
     o.append(el('h2', '', describeRules(rules)))
-    o.append(el('p', '', `${rules.podCount} pods of ${rules.podSize}. Practice has no timer; Challenge gives ${rules.timerSeconds}s per puzzle.`))
+    o.append(
+      el(
+        'p',
+        '',
+        `${rules.podCount} pods of ${rules.podSize}. Practice is a round of ${rules.puzzlesPerRound} puzzles with no timer. Challenge gives ${rules.timerSeconds}s per puzzle for as long as you can keep going.`,
+      ),
+    )
     const choices = el('div', 'choices')
     const practice = el('button', 'btn', 'Practice') as HTMLButtonElement
     practice.onclick = () => start('practice')
@@ -76,11 +82,8 @@ export function mountKakooma(container: HTMLElement, ctx: GameContext): GameInst
 
   function start(m: Mode) {
     mode = m
-    level = 1
-    puzzlesLeft = rules.puzzlesPerLevel
     session.startedAt = Date.now()
     session.puzzlesSolved = session.correct = session.wrong = 0
-    session.levelReached = 1
     sessionRecorded = false
     nextPuzzle()
   }
@@ -105,7 +108,7 @@ export function mountKakooma(container: HTMLElement, ctx: GameContext): GameInst
     renderHud()
     if (timeLeft <= 0) {
       stopTimer()
-      gameOver()
+      finish("Time's up")
     }
   }
 
@@ -118,14 +121,14 @@ export function mountKakooma(container: HTMLElement, ctx: GameContext): GameInst
 
   function renderHud() {
     hud.innerHTML = ''
-    hud.append(span(`Level: `, String(level)), span(`Puzzles left: `, String(puzzlesLeft)))
-    if (mode === 'challenge') {
-      const t = span(`Time left: `, `${Math.floor(timeLeft / 60)}:${String(timeLeft % 60).padStart(2, '0')}`)
+    if (mode === 'practice') {
+      hud.append(span('Puzzle ', `${Math.min(session.puzzlesSolved + 1, rules.puzzlesPerRound)} of ${rules.puzzlesPerRound}`))
+    } else {
+      hud.append(span('Solved: ', String(session.puzzlesSolved)))
+      const t = span('Time left: ', `${Math.floor(timeLeft / 60)}:${String(timeLeft % 60).padStart(2, '0')}`)
       t.classList.add('timer')
       if (timeLeft <= 10) t.classList.add('low')
       hud.append(t)
-    } else {
-      hud.append(span('Mode: ', 'Practice'))
     }
   }
 
@@ -188,37 +191,43 @@ export function mountKakooma(container: HTMLElement, ctx: GameContext): GameInst
   function puzzleSolved() {
     stopTimer()
     session.puzzlesSolved++
-    puzzlesLeft--
-    message.textContent = puzzlesLeft > 0 ? 'Nice!' : `Level ${level} complete!`
-    message.className = 'message good'
-    if (puzzlesLeft <= 0) {
-      level++
-      session.levelReached = level
-      puzzlesLeft = rules.puzzlesPerLevel
-    }
     renderHud()
-    window.setTimeout(nextPuzzle, 900)
+    const done = mode === 'practice' && session.puzzlesSolved >= rules.puzzlesPerRound
+    if (done) {
+      finish('Round complete!')
+      return
+    }
+    message.textContent = 'Nice!'
+    message.className = 'message good'
+    burst(0.5)
+    pending = window.setTimeout(nextPuzzle, 1100)
   }
 
-  function gameOver() {
+  function finish(title: string) {
     endSession()
     board.innerHTML = ''
     message.textContent = ''
+    const secs = Math.round((Date.now() - session.startedAt) / 1000)
     const o = el('div', 'overlay')
-    o.append(el('h2', '', "Time's up"))
-    o.append(el('p', '', `Reached level ${level}. ${session.puzzlesSolved} puzzles, ${session.correct} right, ${session.wrong} wrong.`))
+    o.append(el('h2', '', title))
+    o.append(el('p', '', `${session.puzzlesSolved} puzzles in ${secs}s. ${session.correct} right, ${session.wrong} wrong.`))
     const choices = el('div', 'choices')
-    const again = el('button', 'btn', 'Try again?') as HTMLButtonElement
+    const again = el('button', 'btn', mode === 'practice' ? 'Another round' : 'Try again?') as HTMLButtonElement
     again.onclick = () => start(mode)
     const home = el('button', 'btn secondary', 'Games') as HTMLButtonElement
     home.onclick = ctx.exit
     choices.append(again, home)
     o.append(choices)
     board.append(o)
+    if (session.puzzlesSolved > 0) celebrate()
   }
 
   function endSession() {
     stopTimer()
+    if (pending !== undefined) {
+      clearTimeout(pending)
+      pending = undefined
+    }
     if (sessionRecorded || session.correct + session.wrong === 0) return
     sessionRecorded = true
     ctx.stats.recordSession({
@@ -227,7 +236,6 @@ export function mountKakooma(container: HTMLElement, ctx: GameContext): GameInst
       mode,
       startedAt: session.startedAt,
       durationMs: Date.now() - session.startedAt,
-      levelReached: session.levelReached,
       puzzlesSolved: session.puzzlesSolved,
       correct: session.correct,
       wrong: session.wrong,
@@ -237,9 +245,26 @@ export function mountKakooma(container: HTMLElement, ctx: GameContext): GameInst
   return {
     destroy() {
       endSession()
+      confetti.reset()
       container.innerHTML = ''
     },
   }
+}
+
+/** A quick pop from the bottom-centre of the screen. */
+function burst(scale: number) {
+  void confetti({ particleCount: Math.round(80 * scale), spread: 70, startVelocity: 45, origin: { y: 0.8 }, disableForReducedMotion: true })
+}
+
+/** Two cannons from the sides for a few seconds. */
+function celebrate() {
+  const end = Date.now() + 2500
+  const frame = () => {
+    void confetti({ particleCount: 4, angle: 60, spread: 55, origin: { x: 0, y: 0.7 }, disableForReducedMotion: true })
+    void confetti({ particleCount: 4, angle: 120, spread: 55, origin: { x: 1, y: 0.7 }, disableForReducedMotion: true })
+    if (Date.now() < end) requestAnimationFrame(frame)
+  }
+  frame()
 }
 
 function span(label: string, value: string): HTMLElement {

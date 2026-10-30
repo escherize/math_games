@@ -61,7 +61,7 @@ function renderStats(): HTMLElement {
     [String(s.plays), 'games played'],
     [String(s.puzzles), 'puzzles solved'],
     [s.accuracy === null ? '–' : `${Math.round(s.accuracy * 100)}%`, 'accuracy'],
-    [String(s.bestLevel), 'best level'],
+    [String(s.bestRun), 'best challenge run'],
     [String(s.streakDays), 'day streak'],
   ]
   for (const [n, l] of tiles) {

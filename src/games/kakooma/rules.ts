@@ -8,8 +8,8 @@ export interface KakoomaRules extends BondRules {
   podSize: PodSize
   /** Seconds per puzzle in Challenge mode. */
   timerSeconds: number
-  /** Puzzles to clear per level. */
-  puzzlesPerLevel: number
+  /** Puzzles in a Practice round. */
+  puzzlesPerRound: number
 }
 
 const base = (over: Partial<KakoomaRules>): KakoomaRules => ({
@@ -17,7 +17,7 @@ const base = (over: Partial<KakoomaRules>): KakoomaRules => ({
   podCount: 4,
   podSize: 4,
   timerSeconds: 60,
-  puzzlesPerLevel: 1,
+  puzzlesPerRound: 5,
   ...over,
 })
 
@@ -54,7 +54,7 @@ export const kakoomaRules: RulesSpec<KakoomaRules> = {
       ],
     },
     { key: 'podCount', label: 'Pods per puzzle', type: 'number', min: 1, max: 9 },
-    { key: 'puzzlesPerLevel', label: 'Puzzles per level', type: 'number', min: 1, max: 10 },
+    { key: 'puzzlesPerRound', label: 'Puzzles per round (Practice)', type: 'number', min: 1, max: 20 },
     { key: 'timerSeconds', label: 'Seconds per puzzle (Challenge)', type: 'number', min: 10, max: 600 },
   ],
   validate(r) {
