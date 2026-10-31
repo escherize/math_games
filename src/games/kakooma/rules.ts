@@ -10,6 +10,8 @@ export interface KakoomaRules extends BondRules {
   timerSeconds: number
   /** Puzzles in a Practice round. */
   puzzlesPerRound: number
+  /** A puzzle solved with no wrong taps within this many seconds is "fast". */
+  fastSeconds: number
 }
 
 const base = (over: Partial<KakoomaRules>): KakoomaRules => ({
@@ -18,6 +20,7 @@ const base = (over: Partial<KakoomaRules>): KakoomaRules => ({
   podSize: 4,
   timerSeconds: 60,
   puzzlesPerRound: 5,
+  fastSeconds: 20,
   ...over,
 })
 
@@ -56,6 +59,7 @@ export const kakoomaRules: RulesSpec<KakoomaRules> = {
     { key: 'podCount', label: 'Pods per puzzle', type: 'number', min: 1, max: 9 },
     { key: 'puzzlesPerRound', label: 'Puzzles per round (Practice)', type: 'number', min: 1, max: 20 },
     { key: 'timerSeconds', label: 'Seconds per puzzle (Challenge)', type: 'number', min: 10, max: 600 },
+    { key: 'fastSeconds', label: 'Seconds that count as fast', type: 'number', min: 3, max: 120, help: 'A puzzle solved this quickly with no wrong taps earns a ⚡' },
   ],
   validate(r) {
     if (r.min > r.max) return 'Smallest number must not exceed largest number.'

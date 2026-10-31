@@ -1,6 +1,7 @@
 import confetti from 'canvas-confetti'
 import { randomRng } from '../../engine/rng'
 import { bondKey, describeRules, loadRules, operations } from '../../engine/rules'
+import { isFast } from '../../engine/scoring'
 import type { GameContext, GameInstance } from '../../engine/types'
 import { el } from '../../ui/settings'
 import { generatePuzzle, type Pod, type Puzzle } from './generator'
@@ -36,7 +37,8 @@ export function mountKakooma(container: HTMLElement, ctx: GameContext): GameInst
   let puzzle: Puzzle | null = null
   let puzzleShownAt = 0
   let solved = new Set<number>()
-  const session = { startedAt: Date.now(), puzzlesSolved: 0, correct: 0, wrong: 0 }
+  let puzzleWrong = 0
+  const session = { startedAt: Date.now(), puzzlesSolved: 0, correct: 0, wrong: 0, fast: 0 }
   let sessionRecorded = false
 
   container.innerHTML = ''
@@ -83,7 +85,7 @@ export function mountKakooma(container: HTMLElement, ctx: GameContext): GameInst
   function start(m: Mode) {
     mode = m
     session.startedAt = Date.now()
-    session.puzzlesSolved = session.correct = session.wrong = 0
+    session.puzzlesSolved = session.correct = session.wrong = session.fast = 0
     sessionRecorded = false
     nextPuzzle()
   }
@@ -91,6 +93,7 @@ export function mountKakooma(container: HTMLElement, ctx: GameContext): GameInst
   function nextPuzzle() {
     puzzle = generatePuzzle(randomRng, rules, { podCount: rules.podCount, podSize: rules.podSize })
     solved = new Set()
+    puzzleWrong = 0
     puzzleShownAt = Date.now()
     timeLeft = rules.timerSeconds
     message.textContent = ''
@@ -125,6 +128,14 @@ export function mountKakooma(container: HTMLElement, ctx: GameContext): GameInst
       hud.append(span('Puzzle ', `${Math.min(session.puzzlesSolved + 1, rules.puzzlesPerRound)} of ${rules.puzzlesPerRound}`))
     } else {
       hud.append(span('Solved: ', String(session.puzzlesSolved)))
+    }
+    if (session.fast > 0) {
+      const f = span('⚡ ', String(session.fast))
+      f.classList.add('fast-count')
+      f.title = 'Fast and flawless puzzles'
+      hud.append(f)
+    }
+    if (mode === 'challenge') {
       const t = span('Time left: ', `${Math.floor(timeLeft / 60)}:${String(timeLeft % 60).padStart(2, '0')}`)
       t.classList.add('timer')
       if (timeLeft <= 10) t.classList.add('low')
@@ -176,6 +187,7 @@ export function mountKakooma(container: HTMLElement, ctx: GameContext): GameInst
       if (solved.size === puzzle.pods.length) puzzleSolved()
     } else {
       session.wrong++
+      puzzleWrong++
       ctx.stats.recordAttempt({ fact, correct: false, ms })
       btn.classList.remove('wrong')
       void btn.offsetWidth
@@ -191,15 +203,17 @@ export function mountKakooma(container: HTMLElement, ctx: GameContext): GameInst
   function puzzleSolved() {
     stopTimer()
     session.puzzlesSolved++
+    const fast = isFast({ ms: Date.now() - puzzleShownAt, wrong: puzzleWrong }, rules.fastSeconds)
+    if (fast) session.fast++
     renderHud()
     const done = mode === 'practice' && session.puzzlesSolved >= rules.puzzlesPerRound
     if (done) {
       finish('Round complete!')
       return
     }
-    message.textContent = 'Nice!'
-    message.className = 'message good'
-    burst(0.5)
+    message.textContent = fast ? '⚡ Fast!' : 'Nice!'
+    message.className = fast ? 'message fast' : 'message good'
+    burst(fast ? 1 : 0.5)
     pending = window.setTimeout(nextPuzzle, 1100)
   }
 
@@ -211,6 +225,11 @@ export function mountKakooma(container: HTMLElement, ctx: GameContext): GameInst
     const o = el('div', 'overlay')
     o.append(el('h2', '', title))
     o.append(el('p', '', `${session.puzzlesSolved} puzzles in ${secs}s. ${session.correct} right, ${session.wrong} wrong.`))
+    if (session.puzzlesSolved > 0) {
+      const fastLine = el('p', 'fast-line', `⚡ ${session.fast} of ${session.puzzlesSolved} fast and flawless`)
+      if (session.fast === session.puzzlesSolved) fastLine.classList.add('all')
+      o.append(fastLine)
+    }
     const choices = el('div', 'choices')
     const again = el('button', 'btn', mode === 'practice' ? 'Another round' : 'Try again?') as HTMLButtonElement
     again.onclick = () => start(mode)
@@ -239,6 +258,7 @@ export function mountKakooma(container: HTMLElement, ctx: GameContext): GameInst
       puzzlesSolved: session.puzzlesSolved,
       correct: session.correct,
       wrong: session.wrong,
+      fast: session.fast,
     })
   }
 
