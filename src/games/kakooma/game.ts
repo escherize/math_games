@@ -1,14 +1,15 @@
-import confetti from 'canvas-confetti'
-import { randomRng } from '../../engine/rng'
-import { bondKey, describeRules, loadRules, operations } from '../../engine/rules'
-import { starString, starsFor } from '../../engine/levels'
-import { isFast } from '../../engine/scoring'
-import type { GameContext, GameInstance } from '../../engine/types'
-import { el } from '../../ui/settings'
+/**
+ * The Kakooma board: a Cartridge. Pods of numbers; in each, tap the one two
+ * others make. Owns the taps and the feedback under the finger (a found
+ * cell glows, a wrong one shakes) and reports every tap and every solved
+ * puzzle to the Console. No text, no sound, no timer: the Console does those.
+ */
+import type { CartridgeHandle, Console } from '../../engine/cartridge'
+import { mulberry32 } from '../../engine/rng'
+import { bondKey, operations } from '../../engine/rules'
+import { el } from '../../ui/el'
 import { generatePuzzle, type Pod, type Puzzle } from './generator'
-import { kakoomaRules, presets, type KakoomaRules } from './rules'
-
-type Mode = 'practice' | 'challenge'
+import { kakoomaRules, type KakoomaRules } from './rules'
 
 /** Plus-shaped layout for 5-cell pods: which 3x3 slots are blank, and which edges of each filled slot face outward. */
 const PLUS_BLANKS = new Set([0, 2, 6, 8])
@@ -20,139 +21,32 @@ const PLUS_EDGES: Record<number, string[]> = {
   7: ['Left', 'Right', 'Bottom'],
 }
 
-const PROMPTS: Record<KakoomaRules['op'], string> = {
-  add: 'In each pod, tap the number that is the sum of two others.',
-  subtract: 'In each pod, tap a number that is the difference of two others.',
-  multiply: 'In each pod, tap the number that is the product of two others.',
-  divide: 'In each pod, tap a number that is the quotient of two others.',
-  power: 'In each pod, tap the number that is one number raised to another.',
-}
-
-export function mountKakooma(container: HTMLElement, ctx: GameContext): GameInstance {
-  const saved = loadRules('kakooma', kakoomaRules)
-  // A level supplies the numbers; the parent's saved rules supply the pacing.
-  const level = ctx.level
-  const rules: KakoomaRules = level
-    ? { ...(level.rules as KakoomaRules), puzzlesPerRound: saved.puzzlesPerRound, fastSeconds: saved.fastSeconds, timerSeconds: saved.timerSeconds }
-    : saved
-  const nextLevel = level ? presets[presets.findIndex((p) => p.id === level.id) + 1] : undefined
+export function mountKakooma(container: HTMLElement, host: Console<KakoomaRules>): CartridgeHandle {
+  const rules: KakoomaRules = { ...host.rules }
+  const problem = kakoomaRules.validate(rules)
+  if (problem) throw new Error(`Kakooma rules: ${problem}`)
   const info = operations[rules.op]
-  let mode: Mode = 'practice'
-  let timeLeft = rules.timerSeconds
-  let timer: number | undefined
-  let pending: number | undefined
-  let puzzle: Puzzle | null = null
-  let puzzleShownAt = 0
-  let solved = new Set<number>()
-  let puzzleWrong = 0
-  const session = { startedAt: Date.now(), puzzlesSolved: 0, correct: 0, wrong: 0, fast: 0 }
-  let sessionRecorded = false
 
-  container.innerHTML = ''
-  const root = el('div', 'game')
-  const top = el('div', 'topbar')
-  const back = el('button', 'back', '← Games') as HTMLButtonElement
-  back.onclick = () => {
-    endSession()
-    ctx.exit()
-  }
-  top.append(back, el('h1', '', level ? `Kakooma · ${level.name}` : 'Kakooma'))
-  const hud = el('div', 'hud')
-  const prompt = el('div', 'prompt', PROMPTS[rules.op])
   const board = el('div', 'board')
-  const message = el('div', 'message')
-  root.append(top, hud, prompt, board, message)
-  container.append(root)
+  container.append(board)
 
-  if (level) start('practice')
-  else showStart()
+  let index = -1
+  let puzzle: Puzzle | null = null
+  let solved = new Set<number>()
+  let wrong = 0
+  let shownAt = 0
+  let responses: string[] = []
+  /** The current puzzle is solved and the board is holding for `next()`. */
+  let holding = false
 
-  function showStart() {
-    hud.innerHTML = ''
-    board.innerHTML = ''
-    message.textContent = ''
-    const o = el('div', 'overlay')
-    o.append(el('h2', '', describeRules(rules)))
-    o.append(
-      el(
-        'p',
-        '',
-        `${rules.podCount} pods of ${rules.podSize}. Practice is a round of ${rules.puzzlesPerRound} puzzles with no timer. Challenge gives ${rules.timerSeconds}s per puzzle for as long as you can keep going.`,
-      ),
-    )
-    const choices = el('div', 'choices')
-    const practice = el('button', 'btn', 'Practice') as HTMLButtonElement
-    practice.onclick = () => start('practice')
-    const challenge = el('button', 'btn secondary', 'Challenge') as HTMLButtonElement
-    challenge.onclick = () => start('challenge')
-    choices.append(practice, challenge)
-    o.append(choices)
-    board.append(o)
-  }
-
-  function start(m: Mode) {
-    mode = m
-    session.startedAt = Date.now()
-    session.puzzlesSolved = session.correct = session.wrong = session.fast = 0
-    sessionRecorded = false
-    nextPuzzle()
-  }
-
-  function nextPuzzle() {
-    puzzle = generatePuzzle(randomRng, rules, { podCount: rules.podCount, podSize: rules.podSize })
+  function show(i: number) {
+    index = i
+    puzzle = generatePuzzle(mulberry32(host.seed + i), rules, { podCount: rules.podCount, podSize: rules.podSize })
     solved = new Set()
-    puzzleWrong = 0
-    puzzleShownAt = Date.now()
-    timeLeft = rules.timerSeconds
-    message.textContent = ''
-    message.className = 'message'
-    renderBoard()
-    renderHud()
-    if (mode === 'challenge') {
-      stopTimer()
-      timer = window.setInterval(tick, 1000)
-    }
-  }
-
-  function tick() {
-    timeLeft -= 1
-    renderHud()
-    if (timeLeft <= 0) {
-      stopTimer()
-      finish("Time's up")
-    }
-  }
-
-  function stopTimer() {
-    if (timer !== undefined) {
-      clearInterval(timer)
-      timer = undefined
-    }
-  }
-
-  function renderHud() {
-    hud.innerHTML = ''
-    if (mode === 'practice') {
-      hud.append(span('Puzzle ', `${Math.min(session.puzzlesSolved + 1, rules.puzzlesPerRound)} of ${rules.puzzlesPerRound}`))
-    } else {
-      hud.append(span('Solved: ', String(session.puzzlesSolved)))
-    }
-    if (session.fast > 0) {
-      const f = span('⚡ ', String(session.fast))
-      f.classList.add('fast-count')
-      f.title = 'Fast and flawless puzzles'
-      hud.append(f)
-    }
-    if (mode === 'challenge') {
-      const t = span('Time left: ', `${Math.floor(timeLeft / 60)}:${String(timeLeft % 60).padStart(2, '0')}`)
-      t.classList.add('timer')
-      if (timeLeft <= 10) t.classList.add('low')
-      hud.append(t)
-    }
-  }
-
-  function renderBoard() {
-    if (!puzzle) return
+    wrong = 0
+    responses = []
+    holding = false
+    shownAt = Date.now()
     board.innerHTML = ''
     board.className = `board ${puzzle.pods.length === 4 ? 'pods-4' : 'pods-many'}`
     puzzle.pods.forEach((pod, p) => board.append(podEl(pod, p)))
@@ -162,7 +56,6 @@ export function mountKakooma(container: HTMLElement, ctx: GameContext): GameInst
   function podEl(pod: Pod, p: number): HTMLElement {
     const wrap = el('div', 'pod')
     wrap.dataset.size = String(pod.cells.length)
-    if (solved.has(p)) wrap.classList.add('solved')
     const slots = pod.cells.length === 5 ? 9 : pod.cells.length
     let ci = 0
     for (let s = 0; s < slots; s++) {
@@ -172,149 +65,51 @@ export function mountKakooma(container: HTMLElement, ctx: GameContext): GameInst
       }
       const idx = ci++
       const b = el('button', 'cell', String(pod.cells[idx])) as HTMLButtonElement
+      b.type = 'button'
       if (pod.cells.length === 5) for (const edge of PLUS_EDGES[s]) b.style.setProperty(`border-${edge.toLowerCase()}-width`, '3px')
-      if (solved.has(p) && pod.targets.includes(idx)) b.classList.add('found')
-      b.onclick = () => tap(p, idx, b)
+      b.addEventListener('click', () => tap(p, idx, b))
       wrap.append(b)
     }
     return wrap
   }
 
   function tap(p: number, idx: number, btn: HTMLButtonElement) {
-    if (!puzzle || solved.has(p)) return
+    if (!puzzle || holding || solved.has(p)) return
     const pod = puzzle.pods[p]
     const [i, j] = pod.parts
     const fact = bondKey(info.base, pod.cells[i], pod.cells[j])
-    const ms = Date.now() - puzzleShownAt
+    const ms = Date.now() - shownAt
     if (pod.targets.includes(idx)) {
       solved.add(p)
-      session.correct++
-      ctx.stats.recordAttempt({ fact, correct: true, ms })
+      responses.push(`${pod.cells[i]}${info.symbol}${pod.cells[j]}=${pod.cells[pod.whole]}`)
       btn.classList.add('found')
       btn.parentElement?.classList.add('solved')
-      if (solved.size === puzzle.pods.length) puzzleSolved()
+      host.report({ type: 'tap', correct: true, fact, ms })
+      if (solved.size === puzzle.pods.length) {
+        holding = true
+        host.report({ type: 'puzzle', index, of: host.puzzles, wrong, ms, response: responses.join(' ') })
+      }
     } else {
-      session.wrong++
-      puzzleWrong++
-      ctx.stats.recordAttempt({ fact, correct: false, ms })
+      wrong++
       btn.classList.remove('wrong')
       void btn.offsetWidth
       btn.classList.add('wrong')
       btn.addEventListener('animationend', () => btn.classList.remove('wrong'), { once: true })
-      if (mode === 'challenge') {
-        timeLeft = Math.max(1, timeLeft - 3)
-        renderHud()
-      }
+      host.report({ type: 'tap', correct: false, fact, ms })
     }
   }
 
-  function puzzleSolved() {
-    stopTimer()
-    session.puzzlesSolved++
-    const fast = isFast({ ms: Date.now() - puzzleShownAt, wrong: puzzleWrong }, rules.fastSeconds)
-    if (fast) session.fast++
-    renderHud()
-    const done = mode === 'practice' && session.puzzlesSolved >= rules.puzzlesPerRound
-    if (done) {
-      finish('Round complete!')
-      return
-    }
-    message.textContent = fast ? '⚡ Fast!' : 'Nice!'
-    message.className = fast ? 'message fast' : 'message good'
-    burst(fast ? 1 : 0.5)
-    pending = window.setTimeout(nextPuzzle, 1100)
-  }
-
-  function finish(title: string) {
-    endSession()
-    board.innerHTML = ''
-    message.textContent = ''
-    const secs = Math.round((Date.now() - session.startedAt) / 1000)
-    const o = el('div', 'overlay')
-    o.append(el('h2', '', title))
-    o.append(el('p', '', `${session.puzzlesSolved} puzzles in ${secs}s. ${session.correct} right, ${session.wrong} wrong.`))
-    if (session.puzzlesSolved > 0) {
-      const fastLine = el('p', 'fast-line', `⚡ ${session.fast} of ${session.puzzlesSolved} fast and flawless`)
-      if (session.fast === session.puzzlesSolved) fastLine.classList.add('all')
-      o.append(fastLine)
-    }
-    const choices = el('div', 'choices')
-    let stars = 0
-    if (level && mode === 'practice') {
-      const completed = session.puzzlesSolved >= rules.puzzlesPerRound
-      stars = starsFor({ puzzles: session.puzzlesSolved, wrong: session.wrong, fast: session.fast, completed })
-      const best = ctx.stats.levelStars(level.id)
-      if (completed) ctx.stats.recordLevel(level.id, stars)
-      const row = el('div', 'stars-row', starString(stars))
-      row.setAttribute('aria-label', `${stars} of 3 stars`)
-      o.append(row)
-      if (stars > best) o.append(el('p', 'stars-note', best === 0 ? 'Level cleared!' : 'New best!'))
-      else if (stars < 3 && stars > 0) o.append(el('p', 'stars-note', stars === 1 ? 'No wrong taps next time for two stars.' : 'Every puzzle fast for three stars.'))
-    }
-    const again = el('button', stars >= 1 && nextLevel ? 'btn secondary' : 'btn', mode === 'practice' ? 'Another round' : 'Try again?') as HTMLButtonElement
-    again.onclick = () => start(mode)
-    if (level && stars >= 1 && nextLevel) {
-      const next = el('button', 'btn', `Next level: ${nextLevel.name}`) as HTMLButtonElement
-      next.onclick = () => ctx.openLevel(nextLevel.id)
-      choices.append(next)
-    }
-    const home = el('button', 'btn secondary', 'Games') as HTMLButtonElement
-    home.onclick = ctx.exit
-    choices.append(again, home)
-    o.append(choices)
-    board.append(o)
-    if (session.puzzlesSolved > 0) celebrate()
-  }
-
-  function endSession() {
-    stopTimer()
-    if (pending !== undefined) {
-      clearTimeout(pending)
-      pending = undefined
-    }
-    if (sessionRecorded || session.correct + session.wrong === 0) return
-    sessionRecorded = true
-    ctx.stats.recordSession({
-      gameId: 'kakooma',
-      variant: describeRules(rules),
-      mode,
-      startedAt: session.startedAt,
-      durationMs: Date.now() - session.startedAt,
-      puzzlesSolved: session.puzzlesSolved,
-      correct: session.correct,
-      wrong: session.wrong,
-      fast: session.fast,
-      levelId: level?.id,
-    })
-  }
+  show(0)
 
   return {
+    next() {
+      if (!holding || index + 1 >= host.puzzles) return false
+      show(index + 1)
+      return true
+    },
     destroy() {
-      endSession()
-      confetti.reset()
-      container.innerHTML = ''
+      puzzle = null
+      board.remove()
     },
   }
-}
-
-/** A quick pop from the bottom-centre of the screen. */
-function burst(scale: number) {
-  void confetti({ particleCount: Math.round(80 * scale), spread: 70, startVelocity: 45, origin: { y: 0.8 }, disableForReducedMotion: true })
-}
-
-/** Two cannons from the sides for a few seconds. */
-function celebrate() {
-  const end = Date.now() + 2500
-  const frame = () => {
-    void confetti({ particleCount: 4, angle: 60, spread: 55, origin: { x: 0, y: 0.7 }, disableForReducedMotion: true })
-    void confetti({ particleCount: 4, angle: 120, spread: 55, origin: { x: 1, y: 0.7 }, disableForReducedMotion: true })
-    if (Date.now() < end) requestAnimationFrame(frame)
-  }
-  frame()
-}
-
-function span(label: string, value: string): HTMLElement {
-  const s = el('span', '', label)
-  s.append(el('b', '', value))
-  return s
 }

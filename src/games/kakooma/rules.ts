@@ -1,26 +1,18 @@
-import { bondFields, defaultBondRules, type BondRules, type Preset, type RulesSpec } from '../../engine/rules'
+import { bondFields, defaultBondRules, defaultPacingRules, pacingFields, type PacedRules, type Preset, type RulesSpec } from '../../engine/rules'
 import { maxFeasiblePodSize } from './generator'
 
 export type PodSize = 4 | 5 | 6 | 9
 
-export interface KakoomaRules extends BondRules {
+export interface KakoomaRules extends PacedRules {
   podCount: number
   podSize: PodSize
-  /** Seconds per puzzle in Challenge mode. */
-  timerSeconds: number
-  /** Puzzles in a Practice round. */
-  puzzlesPerRound: number
-  /** A puzzle solved with no wrong taps within this many seconds is "fast". */
-  fastSeconds: number
 }
 
 const base = (over: Partial<KakoomaRules>): KakoomaRules => ({
   ...defaultBondRules,
+  ...defaultPacingRules,
   podCount: 4,
   podSize: 4,
-  timerSeconds: 60,
-  puzzlesPerRound: 5,
-  fastSeconds: 20,
   ...over,
 })
 
@@ -57,9 +49,7 @@ export const kakoomaRules: RulesSpec<KakoomaRules> = {
       ],
     },
     { key: 'podCount', label: 'Pods per puzzle', type: 'number', min: 1, max: 9 },
-    { key: 'puzzlesPerRound', label: 'Puzzles per round (Practice)', type: 'number', min: 1, max: 20 },
-    { key: 'timerSeconds', label: 'Seconds per puzzle (Challenge)', type: 'number', min: 10, max: 600 },
-    { key: 'fastSeconds', label: 'Seconds that count as fast', type: 'number', min: 3, max: 120, help: 'A puzzle solved this quickly with no wrong taps earns a ⚡' },
+    ...pacingFields,
   ],
   validate(r) {
     if (r.min > r.max) return 'Smallest number must not exceed largest number.'

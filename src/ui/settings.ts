@@ -1,4 +1,7 @@
 import { describeRules, loadRules, saveRules, type BondRules, type Field, type RulesSpec } from '../engine/rules'
+import { el } from './el'
+
+export { el }
 
 /** Renders a parent-facing settings form for any game that declares a RulesSpec. */
 export function renderSettings<R extends BondRules>(
@@ -128,11 +131,4 @@ function fieldEl(f: Field, values: Record<string, unknown>): HTMLElement {
   }
   if (f.help) wrap.append(el('div', 'help', f.help))
   return wrap
-}
-
-export function el(tag: string, className = '', text = ''): HTMLElement {
-  const e = document.createElement(tag)
-  if (className) e.className = className
-  if (text) e.textContent = text
-  return e
 }

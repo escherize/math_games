@@ -11,6 +11,7 @@
   },
   "devDependencies": {
     "@types/canvas-confetti": "^1.9.0",
+    "happy-dom": "^18.0.1",
     "typescript": "~5.9.3",
     "vite": "^7.1.0",
     "vitest": "^3.2.0"

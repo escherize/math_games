@@ -3,12 +3,13 @@ import { starString, unlockedCount } from './engine/levels'
 import { findGame, games } from './engine/registry'
 import { describeRules, loadRules } from './engine/rules'
 import { StatsStore } from './engine/stats'
-import type { GameDefinition, GameInstance } from './engine/types'
+import type { Cartridge } from './engine/cartridge'
+import { mountPlay, type PlayInstance } from './ui/play'
 import { el, renderSettings } from './ui/settings'
 
 const app = document.getElementById('app')!
 const stats = new StatsStore()
-let current: GameInstance | null = null
+let current: PlayInstance | null = null
 
 function go(hash: string) {
   location.hash = hash
@@ -19,10 +20,10 @@ function route() {
   current = null
   const [, section, id, levelId] = location.hash.split('/')
   const game = id ? findGame(id) : undefined
-  const level = game && levelId ? game.levels.find((l) => l.id === levelId) : undefined
+  const level = game && levelId ? game.rules.presets.find((l) => l.id === levelId) : undefined
   if (section === 'play' && game && (level || !levelId)) {
     app.innerHTML = ''
-    current = game.mount(app, { stats, level, exit: () => go('#/'), openLevel: (lid) => go(`#/play/${game.id}/${lid}`) })
+    current = mountPlay(app, game, { stats, level, exit: () => go('#/'), openLevel: (lid) => go(`#/play/${game.id}/${lid}`) })
   } else if (section === 'settings' && game) {
     renderSettings(app, game.id, game.title, game.rules, () => go('#/'))
   } else {
@@ -56,13 +57,14 @@ function renderHub() {
 }
 
 /** The ladder as chips: stars earned, the next open level highlighted, the rest locked. */
-function renderLevels(g: GameDefinition): HTMLElement {
+function renderLevels(g: Cartridge): HTMLElement {
+  const levels = g.rules.presets
   const wrap = el('div', 'levels')
   const open = unlockedCount(
-    g.levels.map((l) => l.id),
+    levels.map((l) => l.id),
     (id) => stats.levelStars(id),
   )
-  g.levels.forEach((l, i) => {
+  levels.forEach((l, i) => {
     const stars = stats.levelStars(l.id)
     const locked = i >= open
     const b = el('button', 'level') as HTMLButtonElement
