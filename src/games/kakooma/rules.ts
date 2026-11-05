@@ -6,6 +6,12 @@ export type PodSize = 4 | 5 | 6 | 9
 export interface KakoomaRules extends PacedRules {
   podCount: number
   podSize: PodSize
+  /** One part of the bond is always this number; 0 = any. */
+  addend: number
+  /** How many times one numeral may appear in a pod (1 = all distinct). */
+  repeats: number
+  /** Smallest allowed combined value; 0 = any. */
+  minResult: number
 }
 
 const base = (over: Partial<KakoomaRules>): KakoomaRules => ({
@@ -13,6 +19,9 @@ const base = (over: Partial<KakoomaRules>): KakoomaRules => ({
   ...defaultPacingRules,
   podCount: 4,
   podSize: 4,
+  addend: 0,
+  repeats: 1,
+  minResult: 0,
   ...over,
 })
 
@@ -49,10 +58,24 @@ export const kakoomaRules: RulesSpec<KakoomaRules> = {
       ],
     },
     { key: 'podCount', label: 'Pods per puzzle', type: 'number', min: 1, max: 9 },
+    { key: 'addend', label: 'Always use this number', type: 'number', min: 0, max: 999, help: '0 means any; 1 makes every bond a +1 bond' },
+    { key: 'minResult', label: 'Smallest answer', type: 'number', min: 0, max: 99999, help: '0 means no minimum' },
+    {
+      key: 'repeats',
+      label: 'Same numeral may appear',
+      type: 'select',
+      options: [
+        { value: 1, label: 'once' },
+        { value: 2, label: 'twice (doubles like 2+2)' },
+        { value: 3, label: 'three times' },
+      ],
+    },
     ...pacingFields,
   ],
   validate(r) {
     if (r.min > r.max) return 'Smallest number must not exceed largest number.'
+    if (r.addend > 0 && (r.addend < r.min || r.addend > r.max)) return 'The always-used number must be within the number range.'
+    if (r.minResult > 0 && r.maxResult > 0 && r.minResult > r.maxResult) return 'Smallest answer must not exceed largest answer.'
     const feasible = maxFeasiblePodSize(r)
     if (feasible === 0) return 'These numbers cannot make any puzzle. Widen the range or raise the largest answer.'
     if (r.podSize > feasible) {
