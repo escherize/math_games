@@ -27,67 +27,81 @@ interface Triple {
 }
 
 /**
- * Every triple (i, j, k) with cells[k] == cells[i] ∘ cells[j].
- * A valid pod has exactly one, so the answer is never ambiguous.
+ * What a pod may look like beyond the bond core: `addend` pins one part of
+ * the bond (0 = any), `repeats` is how many times one numeral may appear
+ * (1 = all distinct; 2 or 3 lets doubles like 2+2=4 in, which bonds within 5
+ * need), `minResult` is the smallest allowed combined value (0 = any).
+ */
+export interface PodRules extends BondRules {
+  addend?: number
+  repeats?: number
+  minResult?: number
+}
+
+const count = (cells: number[], x: number) => cells.filter((c) => c === x).length
+
+/**
+ * Every bond in the pod, one per distinct value triple (a, b, whole): with a
+ * repeated numeral the two copies are the same bond, not two. Index triples
+ * name the first matching cells. A valid pod has exactly one, and its whole
+ * appears once, so the answer is never ambiguous.
  */
 export function solutions(cells: number[], op: BondRules['op']): Triple[] {
   const info = operations[op]
   const out: Triple[] = []
+  const seen = new Set<string>()
   for (let i = 0; i < cells.length; i++)
     for (let j = info.ordered ? 0 : i + 1; j < cells.length; j++) {
       if (i === j) continue
       const target = combine(info.base, cells[i], cells[j])
       for (let k = 0; k < cells.length; k++) {
         if (k === i || k === j) continue
-        if (cells[k] === target) out.push({ whole: k, parts: [i, j] })
+        if (cells[k] !== target) continue
+        const key = info.ordered ? `${cells[i]},${cells[j]}` : `${Math.min(cells[i], cells[j])},${Math.max(cells[i], cells[j])}`
+        if (seen.has(key)) continue
+        seen.add(key)
+        out.push({ whole: k, parts: [i, j] })
       }
     }
   return out
 }
 
-/** Would adding `x` to a pod that already has exactly one triple create another? */
+/** Would adding `x` to a pod that already has exactly one bond create another? */
 function addsSolution(cells: number[], x: number, op: BondRules['op']): boolean {
-  const info = operations[op]
-  for (const c of cells) {
-    const ab = combine(info.base, c, x)
-    if (cells.includes(ab) && ab !== c) return true
-    if (info.ordered) {
-      const ba = combine(info.base, x, c)
-      if (cells.includes(ba) && ba !== c) return true
-    }
-  }
-  for (let i = 0; i < cells.length; i++)
-    for (let j = 0; j < cells.length; j++) {
-      if (i === j || (!info.ordered && j < i)) continue
-      if (combine(info.base, cells[i], cells[j]) === x) return true
-    }
-  return false
+  return solutions([...cells, x], op).length !== solutions(cells, op).length
 }
 
-function targets(t: Triple, op: BondRules['op']): number[] {
-  return operations[op].target === 'whole' ? [t.whole] : [...t.parts]
+/** The cells a tap on `t` may land on: the whole, or every copy of either part. */
+function targets(cells: number[], t: Triple, op: BondRules['op']): number[] {
+  if (operations[op].target === 'whole') return [t.whole]
+  const values = new Set(t.parts.map((i) => cells[i]))
+  return cells.map((c, i) => (values.has(c) ? i : -1)).filter((i) => i >= 0)
 }
 
 /**
  * Build a pod one cell at a time: start from a bond, then only add
- * distractors that do not form a second bond. Values are distinct so the
- * tap is unambiguous. Returns null if the rules cannot fill this size.
+ * distractors that do not form a second bond. Returns null if the rules
+ * cannot fill this size.
  */
-function generatePod(rng: Rng, r: BondRules, size: number, attempts = 60): Pod | null {
+function generatePod(rng: Rng, r: PodRules, size: number, attempts = 60): Pod | null {
   const info = operations[r.op]
   const pool = operandValues(r)
   const cap = r.maxResult > 0 ? r.maxResult : Infinity
+  const floor = r.minResult && r.minResult > 0 ? r.minResult : -Infinity
+  const repeats = Math.max(1, r.repeats ?? 1)
+  const addend = r.addend && r.addend > 0 ? r.addend : 0
+  if (addend && !pool.includes(addend)) return null
   // Distractors may be any value a cell could legitimately show, so a
   // narrow operand range like 1..3 can still fill a pod with answers up to 6.
   const fillers = operandValues({ ...r, max: Math.max(r.max, Number.isFinite(cap) ? cap : r.max) })
   for (let attempt = 0; attempt < attempts; attempt++) {
-    const a = pool[randInt(rng, 0, pool.length - 1)]
+    const a = addend || pool[randInt(rng, 0, pool.length - 1)]
     const b = pool[randInt(rng, 0, pool.length - 1)]
     const whole = combine(info.base, a, b)
-    if (a === b || whole > cap || whole === a || whole === b || !Number.isFinite(whole)) continue
+    if ((a === b && repeats < 2) || whole > cap || whole < floor || whole === a || whole === b || !Number.isFinite(whole)) continue
     const cells = [a, b, whole]
     while (cells.length < size) {
-      const candidates = fillers.filter((x) => !cells.includes(x) && !addsSolution(cells, x, r.op))
+      const candidates = fillers.filter((x) => count(cells, x) < (x === whole ? 1 : repeats) && !addsSolution(cells, x, r.op))
       if (candidates.length === 0) break
       cells.push(candidates[randInt(rng, 0, candidates.length - 1)])
     }
@@ -95,12 +109,13 @@ function generatePod(rng: Rng, r: BondRules, size: number, attempts = 60): Pod |
     const shuffled = shuffle(rng, cells)
     const sols = solutions(shuffled, r.op)
     if (sols.length !== 1) continue
-    return { cells: shuffled, whole: sols[0].whole, parts: sols[0].parts, targets: targets(sols[0], r.op) }
+    if (count(shuffled, shuffled[sols[0].whole]) !== 1) continue
+    return { cells: shuffled, whole: sols[0].whole, parts: sols[0].parts, targets: targets(shuffled, sols[0], r.op) }
   }
   return null
 }
 
-export function generatePuzzle(rng: Rng, r: BondRules, shape: Shape): Puzzle {
+export function generatePuzzle(rng: Rng, r: PodRules, shape: Shape): Puzzle {
   const pods: Pod[] = []
   for (let i = 0; i < shape.podCount; i++) {
     const pod = generatePod(rng, r, shape.podSize, 400)
@@ -113,7 +128,7 @@ export function generatePuzzle(rng: Rng, r: BondRules, shape: Shape): Puzzle {
 const SIZES: PodSize[] = [9, 6, 5, 4]
 
 /** Largest pod size these rules can reliably fill, or 0 if none. */
-export function maxFeasiblePodSize(r: BondRules): PodSize | 0 {
+export function maxFeasiblePodSize(r: PodRules): PodSize | 0 {
   if (operandValues(r).length < 2) return 0
   for (const size of SIZES) {
     const rng = mulberry32(7)

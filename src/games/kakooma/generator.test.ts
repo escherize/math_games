@@ -30,6 +30,46 @@ describe('kakooma generator', () => {
     })
   }
 
+  it('pins one part of every bond to the addend', () => {
+    const r = { ...presets[2].rules, addend: 1, podCount: 1, podSize: 5 }
+    for (let seed = 1; seed <= 40; seed++) {
+      const [pod] = generatePuzzle(mulberry32(seed), r, { podCount: 1, podSize: 5 }).pods
+      expect(pod.parts.map((i) => pod.cells[i])).toContain(1)
+      expect(solutions(pod.cells, 'add')).toHaveLength(1)
+    }
+  })
+
+  it('lets a numeral repeat so bonds within 5 are possible, with one bond and a unique whole', () => {
+    const r = { ...presets[1].rules, min: 1, max: 4, maxResult: 5, repeats: 3, podCount: 1, podSize: 5 }
+    expect(maxFeasiblePodSize({ ...r, repeats: 1 })).toBeLessThan(5)
+    expect(maxFeasiblePodSize(r)).toBeGreaterThanOrEqual(5)
+    let doubles = 0
+    for (let seed = 1; seed <= 60; seed++) {
+      const [pod] = generatePuzzle(mulberry32(seed), r, { podCount: 1, podSize: 5 }).pods
+      expect(pod.cells[pod.whole]).toBeLessThanOrEqual(5)
+      expect(solutions(pod.cells, 'add')).toHaveLength(1)
+      expect(pod.cells.filter((c) => c === pod.cells[pod.whole])).toHaveLength(1)
+      for (const c of pod.cells) expect(pod.cells.filter((x) => x === c).length).toBeLessThanOrEqual(3)
+      const [i, j] = pod.parts
+      if (pod.cells[i] === pod.cells[j]) doubles++
+    }
+    expect(doubles).toBeGreaterThan(0)
+  })
+
+  it('counts a double as one bond and refuses an ambiguous whole', () => {
+    expect(solutions([1, 1, 2, 4, 5], 'add')).toHaveLength(2)
+    expect(solutions([3, 3, 3, 1, 4], 'add')).toEqual([{ whole: 4, parts: [0, 3] }])
+    expect(solutions([2, 2, 4, 1, 5], 'add')).toHaveLength(2)
+  })
+
+  it('keeps every combined value at or above minResult', () => {
+    const r = { ...presets[2].rules, minResult: 6, podCount: 1, podSize: 5 }
+    for (let seed = 1; seed <= 40; seed++) {
+      const [pod] = generatePuzzle(mulberry32(seed), r, { podCount: 1, podSize: 5 }).pods
+      expect(pod.cells[pod.whole]).toBeGreaterThanOrEqual(6)
+    }
+  })
+
   it('is reproducible for a given seed', () => {
     const r = presets[2].rules
     const a = generatePuzzle(mulberry32(42), r, { podCount: 4, podSize: 4 })
