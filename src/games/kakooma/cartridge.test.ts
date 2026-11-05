@@ -59,6 +59,32 @@ describe('kakooma cartridge', () => {
     expect(root.children).toHaveLength(0)
   })
 
+  it('plays a one-puzzle round the way Math Wiz asks for it: one puzzle event, then next() is false', () => {
+    const root = document.createElement('div')
+    const { host, events } = fakeConsole(1, 99)
+    const handle = kakooma.mount(root, host)
+    solve(root)
+    expect(events.filter((e) => e.type === 'puzzle')).toEqual([
+      expect.objectContaining({ type: 'puzzle', index: 0, of: 1, wrong: 0 }),
+    ])
+    expect(events.filter((e) => e.type === 'tap')).toHaveLength(host.rules.podCount)
+    expect(handle.next()).toBe(false)
+    expect(boardValues(root)).toHaveLength(host.rules.podCount)
+    handle.destroy()
+  })
+
+  it('reports progress on every puzzle of an open-ended run', () => {
+    const root = document.createElement('div')
+    const { host, events } = fakeConsole(Infinity, 5)
+    const handle = kakooma.mount(root, host)
+    for (let i = 0; i < 3; i++) {
+      solve(root)
+      expect(events.filter((e) => e.type === 'puzzle').at(-1)).toMatchObject({ index: i, of: Infinity })
+      expect(handle.next()).toBe(true)
+    }
+    handle.destroy()
+  })
+
   it('draws the same round for the same seed and a different one for another', () => {
     const a = document.createElement('div')
     const b = document.createElement('div')
