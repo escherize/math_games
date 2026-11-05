@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "build:lib": "tsc --noEmit && MG_LIB=1 MG_VERSION=$(git rev-parse --short HEAD) vite build && tsc -p tsconfig.lib.json",
+    "presets": "npm run -s build:lib > /dev/null && node scripts/presets.mjs"
   },
   "devDependencies": {
     "@types/canvas-confetti": "^1.9.0",

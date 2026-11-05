@@ -15,6 +15,15 @@ npm run build    # typecheck + bundle to dist/
 
 `dist/` is plain HTML/JS/CSS. Any static host serves it.
 
+## As a library
+
+```bash
+npm run build:lib   # dist-lib/mathgames.js (one ES module, cartridges and their styles inside) + dist-lib/types/
+npm run presets     # every cartridge's presets as JSON, for a host's content generator
+```
+
+Another Console imports the module, picks a cartridge from `games`, and calls `mount(container, { rules, seed, puzzles, report })`. The board brings its own `<style>` (all `.mg-*`), so the host needs no CSS of its own. `version` is the git sha it was built from. Math Wiz vendors this file by sha.
+
 ## What the framework gives every game
 
 - **Rules a parent sets.** Each game declares a `RulesSpec`: defaults, a field schema, presets, and a `validate` function. The hub renders the "Parent settings" screen from the schema and stores the chosen rules in localStorage. Number-bond games share a core (`op`, `min`, `max`, `maxResult`, `step`) and add their own fields.
