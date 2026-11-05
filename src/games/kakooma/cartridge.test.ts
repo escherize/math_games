@@ -11,8 +11,8 @@ function fakeConsole(puzzles: number, seed = 42, rules: KakoomaRules = presets[2
   return { host, events }
 }
 
-const pods = (root: HTMLElement) => Array.from(root.querySelectorAll<HTMLElement>('.pod'))
-const cells = (pod: HTMLElement) => Array.from(pod.querySelectorAll<HTMLButtonElement>('button.cell'))
+const pods = (root: HTMLElement) => Array.from(root.querySelectorAll<HTMLElement>('.mg-pod'))
+const cells = (pod: HTMLElement) => Array.from(pod.querySelectorAll<HTMLButtonElement>('button.mg-cell'))
 const values = (pod: HTMLElement) => cells(pod).map((b) => Number(b.textContent))
 const answerIndex = (pod: HTMLElement) => solutions(values(pod), 'add')[0].whole
 const boardValues = (root: HTMLElement) => pods(root).map(values)
@@ -32,7 +32,7 @@ describe('kakooma cartridge', () => {
     const wrongIdx = [0, 1, 2, 3].find((i) => i !== answerIndex(first))!
     cells(first)[wrongIdx].click()
     expect(events.at(-1)).toMatchObject({ type: 'tap', correct: false })
-    expect(cells(first)[wrongIdx].classList.contains('wrong')).toBe(true)
+    expect(cells(first)[wrongIdx].classList.contains('mg-wrong')).toBe(true)
     expect(handle.next()).toBe(false)
 
     const before = boardValues(root)
@@ -42,7 +42,7 @@ describe('kakooma cartridge', () => {
     expect(solvedEvents[0]).toMatchObject({ type: 'puzzle', index: 0, of: 2, wrong: 1 })
     expect((solvedEvents[0] as { response: string }).response.split(' ')).toHaveLength(host.rules.podCount)
     expect(events.filter((e) => e.type === 'tap' && e.correct)).toHaveLength(host.rules.podCount)
-    expect(cells(first)[answerIndex(first)].classList.contains('found')).toBe(true)
+    expect(cells(first)[answerIndex(first)].classList.contains('mg-found')).toBe(true)
 
     // Taps while holding are ignored; the board stays until the Console moves on.
     cells(first)[wrongIdx].click()

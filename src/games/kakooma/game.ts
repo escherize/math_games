@@ -10,6 +10,7 @@ import { bondKey, operations } from '../../engine/rules'
 import { el } from '../../ui/el'
 import { generatePuzzle, type Pod, type Puzzle } from './generator'
 import { kakoomaRules, type KakoomaRules } from './rules'
+import './board.css'
 
 /** Plus-shaped layout for 5-cell pods: which 3x3 slots are blank, and which edges of each filled slot face outward. */
 const PLUS_BLANKS = new Set([0, 2, 6, 8])
@@ -27,7 +28,7 @@ export function mountKakooma(container: HTMLElement, host: Console<KakoomaRules>
   if (problem) throw new Error(`Kakooma rules: ${problem}`)
   const info = operations[rules.op]
 
-  const board = el('div', 'board')
+  const board = el('div', 'mg-board')
   container.append(board)
 
   let index = -1
@@ -48,23 +49,23 @@ export function mountKakooma(container: HTMLElement, host: Console<KakoomaRules>
     holding = false
     shownAt = Date.now()
     board.innerHTML = ''
-    board.className = `board ${puzzle.pods.length === 4 ? 'pods-4' : 'pods-many'}`
+    board.className = `mg-board ${puzzle.pods.length === 4 ? 'mg-pods-4' : 'mg-pods-many'}`
     puzzle.pods.forEach((pod, p) => board.append(podEl(pod, p)))
-    if (puzzle.pods.length === 4) board.append(el('div', 'op', info.symbol))
+    if (puzzle.pods.length === 4) board.append(el('div', 'mg-op', info.symbol))
   }
 
   function podEl(pod: Pod, p: number): HTMLElement {
-    const wrap = el('div', 'pod')
+    const wrap = el('div', 'mg-pod')
     wrap.dataset.size = String(pod.cells.length)
     const slots = pod.cells.length === 5 ? 9 : pod.cells.length
     let ci = 0
     for (let s = 0; s < slots; s++) {
       if (pod.cells.length === 5 && PLUS_BLANKS.has(s)) {
-        wrap.append(el('div', 'cell blank'))
+        wrap.append(el('div', 'mg-cell mg-blank'))
         continue
       }
       const idx = ci++
-      const b = el('button', 'cell', String(pod.cells[idx])) as HTMLButtonElement
+      const b = el('button', 'mg-cell', String(pod.cells[idx])) as HTMLButtonElement
       b.type = 'button'
       if (pod.cells.length === 5) for (const edge of PLUS_EDGES[s]) b.style.setProperty(`border-${edge.toLowerCase()}-width`, '3px')
       b.addEventListener('click', () => tap(p, idx, b))
@@ -82,8 +83,8 @@ export function mountKakooma(container: HTMLElement, host: Console<KakoomaRules>
     if (pod.targets.includes(idx)) {
       solved.add(p)
       responses.push(`${pod.cells[i]}${info.symbol}${pod.cells[j]}=${pod.cells[pod.whole]}`)
-      btn.classList.add('found')
-      btn.parentElement?.classList.add('solved')
+      btn.classList.add('mg-found')
+      btn.parentElement?.classList.add('mg-solved')
       host.report({ type: 'tap', correct: true, fact, ms })
       if (solved.size === puzzle.pods.length) {
         holding = true
@@ -91,10 +92,10 @@ export function mountKakooma(container: HTMLElement, host: Console<KakoomaRules>
       }
     } else {
       wrong++
-      btn.classList.remove('wrong')
+      btn.classList.remove('mg-wrong')
       void btn.offsetWidth
-      btn.classList.add('wrong')
-      btn.addEventListener('animationend', () => btn.classList.remove('wrong'), { once: true })
+      btn.classList.add('mg-wrong')
+      btn.addEventListener('animationend', () => btn.classList.remove('mg-wrong'), { once: true })
       host.report({ type: 'tap', correct: false, fact, ms })
     }
   }
