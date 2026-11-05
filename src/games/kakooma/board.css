@@ -21,7 +21,7 @@
   --mg-size: clamp(64px, 14vw, 120px);
   width: var(--mg-size); height: var(--mg-size);
   display: grid; place-items: center; padding: 0; margin: 0;
-  font: inherit; font-size: calc(var(--mg-size) * 0.42); font-weight: 400; color: inherit; cursor: pointer;
+  font: inherit; font-size: calc(var(--mg-size) * 0.42); font-weight: 400; color: var(--mg-ink, #1d1d1b); cursor: pointer; line-height: 1;
   background: #fff; border: 1px solid var(--mg-line, #1d1d1b); border-radius: 0;
   transition: background 120ms;
   touch-action: manipulation; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none;

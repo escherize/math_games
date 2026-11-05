@@ -10,7 +10,7 @@ import { bondKey, operations } from '../../engine/rules'
 import { el } from '../../ui/el'
 import { generatePuzzle, type Pod, type Puzzle } from './generator'
 import { kakoomaRules, type KakoomaRules } from './rules'
-import './board.css'
+import css from './board.css?inline'
 
 /** Plus-shaped layout for 5-cell pods: which 3x3 slots are blank, and which edges of each filled slot face outward. */
 const PLUS_BLANKS = new Set([0, 2, 6, 8])
@@ -28,8 +28,14 @@ export function mountKakooma(container: HTMLElement, host: Console<KakoomaRules>
   if (problem) throw new Error(`Kakooma rules: ${problem}`)
   const info = operations[rules.op]
 
+  // The board carries its own stylesheet, so one JS file is the whole
+  // cartridge wherever it is mounted. <style> is valid anywhere in the body
+  // and the rules are all .mg-*, so nothing outside the board is touched.
+  const style = el('style') as HTMLStyleElement
+  style.dataset.mg = 'kakooma'
+  style.textContent = css
   const board = el('div', 'mg-board')
-  container.append(board)
+  container.append(style, board)
 
   let index = -1
   let puzzle: Puzzle | null = null
@@ -111,6 +117,7 @@ export function mountKakooma(container: HTMLElement, host: Console<KakoomaRules>
     destroy() {
       puzzle = null
       board.remove()
+      style.remove()
     },
   }
 }
