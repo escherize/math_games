@@ -58,6 +58,20 @@ export interface BondRules {
 
 export const defaultBondRules: BondRules = { op: 'add', min: 1, max: 9, maxResult: 10, step: 1 }
 
+/** How the hub paces a run. A Console that paces differently (Math Wiz) ignores these. */
+export interface PacingRules {
+  /** Puzzles in a Practice round. */
+  puzzlesPerRound: number
+  /** Seconds per puzzle in Challenge mode. */
+  timerSeconds: number
+  /** A puzzle solved with no wrong taps within this many seconds is "fast". */
+  fastSeconds: number
+}
+
+export type PacedRules = BondRules & PacingRules
+
+export const defaultPacingRules: PacingRules = { puzzlesPerRound: 5, timerSeconds: 60, fastSeconds: 20 }
+
 /** Canonical key for stats, shared by inverse operations: "3+4", "3×4", "2^3". */
 export function bondKey(base: OperationInfo['base'], a: number, b: number): string {
   const sym = base === 'add' ? '+' : base === 'multiply' ? '×' : '^'
@@ -113,6 +127,12 @@ export const bondFields: Field[] = [
   { key: 'max', label: 'Largest number', type: 'number', min: 1, max: 999 },
   { key: 'maxResult', label: 'Largest answer', type: 'number', min: 0, max: 99999, help: '0 means no limit' },
   { key: 'step', label: 'Count by', type: 'number', min: 1, max: 100, help: '10 means only multiples of 10' },
+]
+
+export const pacingFields: Field[] = [
+  { key: 'puzzlesPerRound', label: 'Puzzles per round (Practice)', type: 'number', min: 1, max: 20 },
+  { key: 'timerSeconds', label: 'Seconds per puzzle (Challenge)', type: 'number', min: 10, max: 600 },
+  { key: 'fastSeconds', label: 'Seconds that count as fast', type: 'number', min: 3, max: 120, help: 'A puzzle solved this quickly with no wrong taps earns a ⚡' },
 ]
 
 /* ---------- Storage: one rules object per game ---------- */
