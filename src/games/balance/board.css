@@ -2,7 +2,9 @@
    another Console's page (Math Wiz); every colour falls back to a literal. */
 .mg-balance { display: flex; flex-direction: column; align-items: center; gap: clamp(20px, 5vw, 48px); touch-action: none; user-select: none; -webkit-user-select: none; width: 100%; max-width: 560px; }
 
-.mg-scale { position: relative; width: 100%; height: clamp(150px, 34vw, 210px); }
+.mg-scale { position: relative; width: 100%; height: clamp(170px, 36vw, 240px); }
+/* The drop zone: the whole right half of the scale, invisible. Hit-tested, never styled. */
+.mg-drop { position: absolute; top: 0; right: 0; bottom: 0; left: 50%; }
 .mg-post {
   position: absolute; left: 50%; bottom: 0; transform: translateX(-50%);
   width: 0; height: 0;
@@ -23,7 +25,7 @@
 }
 .mg-pan {
   position: absolute; top: 50%; display: flex; gap: 8px; align-items: center; justify-content: center;
-  min-width: clamp(96px, 26vw, 150px); min-height: clamp(64px, 16vw, 92px); padding: 6px 10px; box-sizing: border-box;
+  min-width: clamp(112px, 30vw, 180px); min-height: clamp(76px, 19vw, 108px); padding: 6px 10px; box-sizing: border-box;
   background: var(--mg-pan, #f3f1ea); border: 2px solid var(--mg-line, #1d1d1b); border-radius: 0 0 14px 14px;
   transform: translateY(-14px) rotate(calc(-1 * var(--mg-tilt))); transform-origin: 50% 0; transition: transform 220ms ease;
 }
@@ -32,14 +34,15 @@
 .mg-beam.mg-level .mg-pan { background: var(--mg-found, #f9dfc0); }
 
 .mg-weight, .mg-tile, .mg-slot {
-  --mg-size: clamp(48px, 12vw, 72px);
+  --mg-size: clamp(56px, 14vw, 84px);
   width: var(--mg-size); height: var(--mg-size); box-sizing: border-box;
   display: grid; place-items: center; line-height: 1;
   font: inherit; font-size: calc(var(--mg-size) * 0.5); font-weight: 600; color: var(--mg-ink, #1d1d1b);
   border-radius: 10px;
 }
 .mg-weight { background: #fff; border: 2px solid var(--mg-line, #1d1d1b); }
-.mg-slot { border: 2px dashed var(--mg-muted, #6b6861); background: transparent; }
+.mg-slot { border: 2px dashed var(--mg-muted, #6b6861); background: transparent; transition: background 120ms ease, border-color 120ms ease; }
+.mg-slot.mg-over { border-color: var(--mg-accent, #4fb6f0); border-style: solid; background: rgba(79, 182, 240, 0.18); }
 .mg-slot .mg-tile { width: 100%; height: 100%; margin: -2px; }
 
 .mg-tray { display: flex; flex-wrap: wrap; justify-content: center; gap: clamp(12px, 3vw, 24px); }

@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest'
-import { draggable, gesture, hit, inside, pathLength, pick, TAP_SLOP_PX, type Point } from './drag'
+import { draggable, gesture, hit, inside, overlaps, pathLength, pick, TAP_SLOP_PX, type Point } from './drag'
 
 function pointer(el: Element, type: string, x: number, y: number, pointerId = 1, extra: PointerEventInit = {}) {
   const e = new PointerEvent(type, { clientX: x, clientY: y, pointerId, bubbles: true, cancelable: true, pointerType: 'touch', ...extra })
@@ -126,6 +126,13 @@ describe('geometry', () => {
     expect(hit({ x: 15, y: 5 }, a)).toBe(false)
     expect(pick({ x: 25, y: 5 }, [a, b])).toBe(b)
     expect(pick({ x: 15, y: 5 }, [a, b])).toBeNull()
+  })
+
+  it('overlaps is true when two boxes touch, false when they only share an edge', () => {
+    const a = box(0, 0, 10, 10)
+    expect(overlaps(a, box(5, 5, 10, 10))).toBe(true)
+    expect(overlaps(a, box(10, 0, 10, 10))).toBe(false)
+    expect(overlaps(a, box(20, 20, 10, 10))).toBe(false)
   })
 
   it('inside is a point-in-polygon test and pathLength sums the segments', () => {
