@@ -1,13 +1,15 @@
 /**
  * The balance scale board: a Cartridge. The whole sits on the left pan, one
  * part on the right beside an empty slot, numeral tiles in a tray below.
- * Drag a tile into the slot: the beam tilts toward the heavier side while
- * the tile hovers over the pan and levels when the bond is complete. Owns
+ * Drag a tile toward the right pan: the whole right side of the scale is the
+ * drop zone, and a tile counts as there when its own box touches the pan or
+ * the finger is anywhere in that zone. The beam tilts toward the heavier
+ * side while the tile hovers and levels when the bond is complete. Owns
  * the drag and the feedback under the finger; reports every drop and every
  * solved puzzle to the Console. No text, no sound, no timer.
  */
 import type { CartridgeHandle, Console } from '../../engine/cartridge'
-import { draggable, hit } from '../../engine/drag'
+import { draggable, hit, overlaps } from '../../engine/drag'
 import { mulberry32 } from '../../engine/rng'
 import { bondKey } from '../../engine/rules'
 import { el } from '../../ui/el'
@@ -39,6 +41,10 @@ export function mountBalance(container: HTMLElement, host: Console<BalanceRules>
   let beam: HTMLElement
   let rightPan: HTMLElement
   let slot: HTMLElement
+  let zone: HTMLElement
+
+  /** Is the carried tile over the right pan: finger in the zone, or the tile's box on the pan? */
+  const onPan = (tile: HTMLElement, p: { x: number; y: number }) => hit(p, zone) || overlaps(tile, rightPan)
 
   function tilt(rightTotal: number) {
     if (!puzzle) return
@@ -67,7 +73,8 @@ export function mountBalance(container: HTMLElement, host: Console<BalanceRules>
     slot = el('div', 'mg-slot')
     rightPan.append(el('div', 'mg-weight', String(puzzle.part)), slot)
     beam.append(leftPan, rightPan)
-    scale.append(beam, el('div', 'mg-post'))
+    zone = el('div', 'mg-drop')
+    scale.append(zone, beam, el('div', 'mg-post'))
 
     const tray = el('div', 'mg-tray')
     for (const value of puzzle.tray) {
@@ -77,7 +84,11 @@ export function mountBalance(container: HTMLElement, host: Console<BalanceRules>
       detachers.push(
         draggable(tile, {
           start: () => !holding && !tile.classList.contains('mg-placed'),
-          over: (p) => tilt(puzzle!.part + (hit(p, rightPan) ? value : 0)),
+          over: (p) => {
+            const over = onPan(tile, p)
+            slot.classList.toggle('mg-over', over)
+            tilt(puzzle!.part + (over ? value : 0))
+          },
           drop: (p) => drop(tile, value, p),
         }),
       )
@@ -88,7 +99,8 @@ export function mountBalance(container: HTMLElement, host: Console<BalanceRules>
 
   function drop(tile: HTMLElement, value: number, p: { x: number; y: number }): boolean {
     if (!puzzle || holding) return false
-    if (!hit(p, slot) && !hit(p, rightPan)) {
+    slot.classList.remove('mg-over')
+    if (!onPan(tile, p)) {
       tilt(puzzle.part)
       return false
     }

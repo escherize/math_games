@@ -15,8 +15,10 @@ function box(el: Element, b: { left: number; top: number; width: number; height:
   el.getBoundingClientRect = () => ({ ...b, right: b.left + b.width, bottom: b.top + b.height, x: b.left, y: b.top, toJSON: () => b }) as DOMRect
 }
 
-/** Give the right pan and its slot a real box; happy-dom lays nothing out. */
+const ZONE = { left: 250, top: 0, width: 250, height: 240 }
+/** Give the drop zone, the right pan and its slot a real box; happy-dom lays nothing out. */
 function layout(root: HTMLElement) {
+  box(root.querySelector('.mg-drop')!, ZONE)
   box(root.querySelector('.mg-pan-right')!, { left: 280, top: 80, width: 150, height: 100 })
   box(root.querySelector('.mg-slot')!, SLOT)
 }
@@ -109,6 +111,32 @@ describe('balance cartridge', () => {
     pointer(right, 'pointermove', 10, 400)
     expect(tiltOf(root)).toBe(base)
     pointer(right, 'pointerup', 10, 400)
+  })
+
+  it('accepts a drop anywhere on the right side of the scale, not only on the pan', () => {
+    const root = document.createElement('div')
+    const { host, events } = fakeConsole(1, 7)
+    balance.mount(root, host)
+    layout(root)
+    // Finger in the zone's far corner, well outside the pan's box.
+    dragTo(missingTile(root), ZONE.left + ZONE.width - 5, ZONE.top + 5)
+    expect(events.filter((e) => e.type === 'puzzle')).toHaveLength(1)
+  })
+
+  it('accepts a tile whose own box touches the pan while the finger is outside the zone', () => {
+    const root = document.createElement('div')
+    const { host, events } = fakeConsole(1, 8)
+    balance.mount(root, host)
+    layout(root)
+    const tile = missingTile(root)
+    // The tile sits across the pan's left edge; the finger is left of the zone.
+    box(tile, { left: 240, top: 90, width: 60, height: 60 })
+    pointer(tile, 'pointerdown', 10, 400)
+    pointer(tile, 'pointermove', 245, 95)
+    expect(root.querySelector('.mg-slot')!.classList.contains('mg-over')).toBe(true)
+    pointer(tile, 'pointerup', 245, 95)
+    expect(events.filter((e) => e.type === 'puzzle')).toHaveLength(1)
+    expect(root.querySelector('.mg-slot')!.classList.contains('mg-over')).toBe(false)
   })
 
   it('refuses rules it cannot play', () => {

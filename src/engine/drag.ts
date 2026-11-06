@@ -162,6 +162,13 @@ export function hit(p: Point, el: Element): boolean {
   return p.x >= r.left && p.x <= r.right && p.y >= r.top && p.y <= r.bottom
 }
 
+/** Do the two elements' boxes touch? A carried tile counts where it sits, not only where the finger is. */
+export function overlaps(a: Element, b: Element): boolean {
+  const r = a.getBoundingClientRect()
+  const q = b.getBoundingClientRect()
+  return r.left < q.right && r.right > q.left && r.top < q.bottom && r.bottom > q.top
+}
+
 /** The first element whose box contains the point, or null. */
 export function pick<T extends Element>(p: Point, els: Iterable<T>): T | null {
   for (const el of els) if (hit(p, el)) return el
