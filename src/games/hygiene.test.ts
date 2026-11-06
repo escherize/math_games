@@ -4,6 +4,8 @@
  * no document- or window-level listeners, no storage, no sound, no text
  * messages, click handlers only (the host synthesises clicks for fat taps,
  * so pointerdown/up handlers would double-fire), and CSS under .mg- only.
+ * A drag or a drawn stroke goes through src/engine/drag.ts, which scopes its
+ * pointer listeners to the board's own element.
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
