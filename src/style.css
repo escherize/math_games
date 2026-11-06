@@ -39,24 +39,58 @@ a { color: inherit; }
 .btn.small { padding: 8px 14px; font-size: 0.9rem; }
 .btn:disabled { opacity: 0.4; cursor: default; }
 
-/* Hub */
-.hub-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
-.card { background: var(--card); border: 2px solid var(--line); border-radius: var(--radius); padding: 18px; }
-.card h2 { margin: 0 0 6px; font-size: 1.25rem; }
-.card p { margin: 0 0 12px; color: var(--muted); font-size: 0.95rem; }
-.card .rules { font-size: 0.85rem; color: var(--muted); margin-bottom: 14px; }
-.card .actions { display: flex; gap: 10px; flex-wrap: wrap; }
-.card .levels-title { margin: 0 0 8px; font-size: 0.9rem; }
-.levels { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
-.level {
-  background: #fff; border: 2px solid var(--line); border-radius: 12px; padding: 8px 12px;
-  display: grid; gap: 2px; text-align: left; font-size: 0.85rem; line-height: 1.2;
+/* Hub: each game is a cartridge. --hue comes from the card (ui/emblems.ts);
+   every tint on it is mixed from that one number, so a new game gets a whole
+   outfit from one line. Cards share one skeleton so the grid rows stay level
+   whatever the ladder length. */
+.hub-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 18px; align-items: start; }
+.card {
+  --hue: 220;
+  --tint: hsl(var(--hue) 75% 93%);
+  --tint-edge: hsl(var(--hue) 50% 80%);
+  --tint-deep: hsl(var(--hue) 60% 36%);
+  --tint-ink: hsl(var(--hue) 40% 30%);
+  background: var(--card); border: 2px solid var(--line); border-radius: var(--radius); overflow: hidden;
+  display: grid; padding: 0;
 }
-.level .name { font-weight: 600; }
-.level .stars { color: var(--star); letter-spacing: 2px; font-size: 0.9rem; }
-.level.locked { opacity: 0.45; cursor: default; }
-.level.locked .stars { color: var(--muted); letter-spacing: 0; }
-.level.next { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79, 182, 240, 0.25); }
+.card .label { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: var(--tint); border-bottom: 2px solid var(--line); }
+.card .emblem {
+  flex: none; width: 52px; height: 52px; padding: 7px; border-radius: 12px;
+  background: #fff; border: 2px solid var(--line); color: var(--tint-deep);
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.card .emblem svg { width: 100%; height: 100%; display: block; }
+.card:hover .emblem { transform: rotate(-6deg) scale(1.06); }
+.card .words { min-width: 0; }
+.card h2 { margin: 0; font-size: 1.15rem; letter-spacing: -0.01em; line-height: 1.15; }
+.card .tagline { margin: 3px 0 0; font-size: 0.8rem; line-height: 1.35; color: var(--tint-ink); }
+
+.ladder { padding: 12px 16px 0; }
+.track { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; }
+.step {
+  width: 34px; height: 34px; padding: 0; border-radius: 10px; border: 2px solid var(--line); background: #fff;
+  display: flex; align-items: center; justify-content: center; gap: 1px;
+  font-weight: 700; font-size: 0.95rem; color: var(--ink); line-height: 1;
+}
+.step svg { width: 14px; height: 14px; display: block; }
+.step.done { background: var(--tint-deep); border-color: var(--tint-deep); color: #fff; }
+.step.done svg { width: 9px; height: 9px; }
+.step.next { border-color: var(--tint-deep); color: var(--tint-deep); box-shadow: 0 0 0 3px var(--tint-edge); }
+.step.locked { background: #faf8f3; border-color: #ddd8cd; color: #b9b3a6; cursor: default; }
+.step:not(:disabled):hover { background: var(--tint); }
+.step.done:not(:disabled):hover { background: var(--tint-ink); }
+.now { display: flex; align-items: baseline; gap: 8px; margin-top: 10px; font-size: 0.85rem; }
+.now .where { color: var(--muted); }
+.now .name { font-weight: 600; }
+
+.card .actions { display: flex; gap: 8px; flex-wrap: wrap; padding: 12px 16px 0; }
+.btn.play { background: var(--tint-deep); }
+.btn.play:hover { background: var(--tint-ink); }
+.card .rules { padding: 8px 16px 14px; font-size: 0.8rem; color: var(--muted); }
+
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.card :focus-visible { outline-color: var(--tint-deep); }
+::selection { background: #cfe8f8; }
 
 .stats { margin-top: 28px; }
 .stats h2 { font-size: 1.1rem; margin: 0 0 10px; }

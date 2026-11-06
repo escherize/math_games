@@ -1,10 +1,11 @@
 import './style.css'
-import { starString, unlockedCount } from './engine/levels'
+import { unlockedCount } from './engine/levels'
 import { findGame, games } from './engine/registry'
 import { describeRules, loadRules } from './engine/rules'
 import { StatsStore } from './engine/stats'
 import type { Cartridge } from './engine/cartridge'
 import { mountPlay, type PlayInstance } from './ui/play'
+import { dressOf, LOCK_SVG, STAR_SVG } from './ui/emblems'
 import { el, renderSettings } from './ui/settings'
 
 const app = document.getElementById('app')!
@@ -38,45 +39,84 @@ function renderHub() {
   app.append(top)
 
   const grid = el('div', 'hub-grid')
-  for (const g of games) {
-    const card = el('div', 'card')
-    card.append(el('h2', '', g.title), el('p', '', g.tagline))
-    card.append(el('div', 'rules', `Current rules: ${describeRules(loadRules(g.id, g.rules))}`))
-    card.append(el('h3', 'levels-title', 'Levels'), renderLevels(g))
-    const actions = el('div', 'actions')
-    const play = el('button', 'btn', 'Play') as HTMLButtonElement
-    play.onclick = () => go(`#/play/${g.id}`)
-    const settings = el('button', 'btn secondary small', 'Parent settings') as HTMLButtonElement
-    settings.onclick = () => go(`#/settings/${g.id}`)
-    actions.append(play, settings)
-    card.append(actions)
-    grid.append(card)
-  }
+  for (const g of games) grid.append(renderCartridge(g))
   app.append(grid)
   app.append(renderStats())
 }
 
-/** The ladder as chips: stars earned, the next open level highlighted, the rest locked. */
+/**
+ * One game as a cartridge: its hue and emblem on the label, the level track
+ * underneath, and the two things a finger can do. Every card has the same
+ * bones whatever its ladder length, so the grid rows stay level.
+ */
+function renderCartridge(g: Cartridge): HTMLElement {
+  const dress = dressOf(g.id)
+  const card = el('article', 'card')
+  card.style.setProperty('--hue', String(dress.hue))
+
+  const label = el('header', 'label')
+  const emblem = el('div', 'emblem')
+  emblem.innerHTML = dress.emblem
+  const words = el('div', 'words')
+  words.append(el('h2', '', g.title), el('p', 'tagline', g.tagline))
+  label.append(emblem, words)
+
+  const actions = el('div', 'actions')
+  const play = el('button', 'btn play', 'Play') as HTMLButtonElement
+  play.onclick = () => go(`#/play/${g.id}`)
+  const settings = el('button', 'btn secondary small', 'Parent settings') as HTMLButtonElement
+  settings.setAttribute('aria-label', `${g.title} parent settings`)
+  settings.onclick = () => go(`#/settings/${g.id}`)
+  actions.append(play, settings)
+
+  card.append(label, renderLevels(g), actions)
+  card.append(el('div', 'rules', describeRules(loadRules(g.id, g.rules))))
+  return card
+}
+
+/**
+ * The ladder as a track of steps: earned ones filled with their stars, the
+ * next one open and named, the rest locked. One line for a short ladder,
+ * two for Kakooma's twelve; the name of the step in play sits beneath.
+ */
 function renderLevels(g: Cartridge): HTMLElement {
   const levels = g.rules.presets
-  const wrap = el('div', 'levels')
+  const wrap = el('nav', 'ladder')
+  wrap.setAttribute('aria-label', `${g.title} levels`)
   const open = unlockedCount(
     levels.map((l) => l.id),
     (id) => stats.levelStars(id),
   )
+  const track = el('ol', 'track')
+  let current: { name: string; index: number; stars: number } | null = null
   levels.forEach((l, i) => {
     const stars = stats.levelStars(l.id)
     const locked = i >= open
-    const b = el('button', 'level') as HTMLButtonElement
+    const li = el('li')
+    const b = el('button', 'step') as HTMLButtonElement
     b.type = 'button'
     if (locked) b.classList.add('locked')
-    if (!locked && stars === 0) b.classList.add('next')
+    else if (stars === 0) b.classList.add('next')
+    else b.classList.add('done')
     b.disabled = locked
-    b.setAttribute('aria-label', locked ? `${l.name} (locked)` : `${l.name}, ${stars} of 3 stars`)
-    b.append(el('span', 'name', l.name), el('span', 'stars', locked ? '🔒' : starString(stars)))
+    b.title = l.name
+    b.setAttribute('aria-label', locked ? `${l.name}, locked` : `${l.name}, ${stars} of 3 stars`)
+    if (locked) b.innerHTML = LOCK_SVG
+    else if (stars === 0) b.textContent = String(i + 1)
+    else b.innerHTML = STAR_SVG.repeat(stars)
     b.onclick = () => go(`#/play/${g.id}/${l.id}`)
-    wrap.append(b)
+    li.append(b)
+    track.append(li)
+    if (!locked && stars === 0 && !current) current = { name: l.name, index: i + 1, stars }
   })
+  // Every level starred: the last one is the one to replay.
+  if (!current) {
+    const last = levels[open - 1] ?? levels[0]
+    current = { name: last.name, index: Math.max(open, 1), stars: stats.levelStars(last.id) }
+  }
+  const now = el('div', 'now')
+  now.append(el('span', 'where', `Level ${current.index} of ${levels.length}`), el('span', 'name', current.name))
+  wrap.append(track, now)
   return wrap
 }
 
