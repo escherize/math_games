@@ -66,11 +66,12 @@ function renderCartridge(g: Cartridge): HTMLElement {
   play.onclick = () => go(`#/play/${g.id}`)
   const settings = el('button', 'btn secondary small', 'Parent settings') as HTMLButtonElement
   settings.setAttribute('aria-label', `${g.title} parent settings`)
+  // The rules in force live on the settings page; here they are a tooltip.
+  settings.title = describeRules(loadRules(g.id, g.rules))
   settings.onclick = () => go(`#/settings/${g.id}`)
   actions.append(play, settings)
 
   card.append(label, renderLevels(g), actions)
-  card.append(el('div', 'rules', describeRules(loadRules(g.id, g.rules))))
   return card
 }
 
