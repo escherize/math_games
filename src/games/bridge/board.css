@@ -1,0 +1,34 @@
+/* Bridge to ten board. Every selector is .mg-* and every colour falls back to
+   a literal, so the board can sit inside another Console's page. */
+.mg-board { display: flex; flex-direction: column; align-items: center; gap: clamp(16px, 3vw, 28px); touch-action: none; user-select: none; -webkit-user-select: none; }
+.mg-frames { display: flex; gap: clamp(20px, 5vw, 56px); align-items: center; }
+.mg-plus { font-size: clamp(1.6rem, 5vw, 2.4rem); font-weight: 700; color: var(--mg-ink, #1d1d1b); line-height: 1; }
+.mg-frame {
+  --mg-cell: clamp(40px, 8vw, 64px);
+  display: grid; grid-template-columns: repeat(5, var(--mg-cell)); grid-auto-rows: var(--mg-cell);
+  border: 2px solid var(--mg-line, #1d1d1b); background: #fff;
+}
+.mg-cell { border: 1px solid var(--mg-line, #1d1d1b); display: grid; place-items: center; position: relative; }
+.mg-cell.mg-target { background: var(--mg-found, #f9dfc0); }
+.mg-dot {
+  width: 72%; height: 72%; border-radius: 50%; background: var(--mg-accent, #4fb6f0);
+  cursor: grab; touch-action: none; position: relative; z-index: 1;
+}
+.mg-dot.mg-second { background: var(--mg-accent-2, #f0a04f); }
+.mg-dot.mg-dragging { z-index: 2; cursor: grabbing; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25); transition: none; }
+.mg-dot.mg-returning { animation: mg-return 150ms; }
+.mg-frame.mg-full { box-shadow: 0 0 0 3px var(--mg-found, #f9dfc0); }
+
+.mg-choices { display: flex; gap: clamp(12px, 3vw, 24px); min-height: clamp(64px, 14vw, 100px); }
+.mg-choice {
+  --mg-size: clamp(64px, 14vw, 100px);
+  width: var(--mg-size); height: var(--mg-size); padding: 0; margin: 0;
+  display: grid; place-items: center; font: inherit; font-size: calc(var(--mg-size) * 0.42); line-height: 1;
+  color: var(--mg-ink, #1d1d1b); background: #fff; border: 2px solid var(--mg-line, #1d1d1b); border-radius: 8px; cursor: pointer;
+  touch-action: manipulation; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none;
+}
+.mg-choice.mg-found { background: var(--mg-found, #f9dfc0); }
+.mg-choice.mg-wrong { animation: mg-shake 300ms; background: #fde3e0; }
+.mg-choices.mg-solved .mg-choice:not(.mg-found) { color: var(--mg-muted, #6b6861); }
+@keyframes mg-shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+@keyframes mg-return { from { transform: scale(1.1); } to { transform: scale(1); } }

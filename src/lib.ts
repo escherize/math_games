@@ -11,6 +11,8 @@ export { bondKey, describeRules, operations } from './engine/rules'
 export { findGame, games } from './engine/registry'
 export { kakooma } from './games/kakooma'
 export type { KakoomaRules } from './games/kakooma/rules'
+export { bridge } from './games/bridge'
+export type { BridgeRules } from './games/bridge/rules'
 
 import { games } from './engine/registry'
 
