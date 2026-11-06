@@ -15,6 +15,8 @@ export { balance } from './games/balance'
 export type { BalanceRules } from './games/balance/rules'
 export { bridge } from './games/bridge'
 export type { BridgeRules } from './games/bridge/rules'
+export { lasso } from './games/lasso'
+export type { LassoRules } from './games/lasso/rules'
 
 import { games } from './engine/registry'
 

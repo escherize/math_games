@@ -35,10 +35,10 @@ export const TAP_SLOP_PX = 12
 const point = (e: PointerEvent): Point => ({ x: e.clientX, y: e.clientY })
 
 /**
- * Track one pointer on `surface`. Returns a function that detaches every
+ * Track one pointer on `surface` (an HTML element or an inline SVG). Returns a function that detaches every
  * listener (call it from the Cartridge's destroy()).
  */
-export function gesture(surface: HTMLElement, h: GestureHandlers): () => void {
+export function gesture(surface: HTMLElement | SVGElement, h: GestureHandlers): () => void {
   let id: number | null = null
   let origin: Point | null = null
   let last: Point | null = null
@@ -96,17 +96,19 @@ export function gesture(surface: HTMLElement, h: GestureHandlers): () => void {
     e.preventDefault()
   }
 
-  surface.addEventListener('pointerdown', onDown)
-  surface.addEventListener('pointermove', onMove)
-  surface.addEventListener('pointerup', onEnd)
-  surface.addEventListener('pointercancel', onEnd)
-  surface.addEventListener('click', onClick, { capture: true })
+  // HTML and SVG elements share the pointer event map; the union hides it from the overloads.
+  const target = surface as HTMLElement
+  target.addEventListener('pointerdown', onDown)
+  target.addEventListener('pointermove', onMove)
+  target.addEventListener('pointerup', onEnd)
+  target.addEventListener('pointercancel', onEnd)
+  target.addEventListener('click', onClick, { capture: true })
   return () => {
-    surface.removeEventListener('pointerdown', onDown)
-    surface.removeEventListener('pointermove', onMove)
-    surface.removeEventListener('pointerup', onEnd)
-    surface.removeEventListener('pointercancel', onEnd)
-    surface.removeEventListener('click', onClick, { capture: true })
+    target.removeEventListener('pointerdown', onDown)
+    target.removeEventListener('pointermove', onMove)
+    target.removeEventListener('pointerup', onEnd)
+    target.removeEventListener('pointercancel', onEnd)
+    target.removeEventListener('click', onClick, { capture: true })
   }
 }
 
