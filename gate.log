@@ -1,0 +1,40 @@
+
+> math-games@0.1.0 build
+> tsc --noEmit && vite build
+
+vite v7.3.7 building client environment for production...
+transforming...
+✓ 25 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                  0.68 kB │ gzip:  0.36 kB
+dist/assets/index-BYTrX4nm.css   4.45 kB │ gzip:  1.51 kB
+dist/assets/index-B6_rfEpX.js   40.16 kB │ gzip: 15.43 kB
+✓ built in 110ms
+
+> math-games@0.1.0 test
+> vitest run
+
+
+ RUN  v3.2.7 /Users/bcm/dv/math_games/.claude/worktrees/mg-12-lasso
+
+ ✓ src/games/hygiene.test.ts (11 tests) 6ms
+ ✓ src/engine/scoring.test.ts (1 test) 1ms
+ ✓ src/engine/stats.test.ts (6 tests) 4ms
+ ✓ src/engine/drag.test.ts (8 tests) 12ms
+ ✓ src/engine/levels.test.ts (7 tests) 3ms
+ ✓ src/lib.test.ts (3 tests) 3ms
+ ✓ src/games/kakooma/cartridge.test.ts (6 tests) 117ms
+ ✓ src/games/kakooma/generator.test.ts (20 tests) 670ms
+ ✓ src/games/lasso/cartridge.test.ts (4 tests) 466ms
+   ✓ lasso cartridge > a rejected loop is cleared after the fade timer  454ms
+ ✓ src/games/lasso/generator.test.ts (5 tests) 838ms
+   ✓ lasso generator > rows13: n within bounds, n dots inside the viewBox, spaced apart, ten apart from the rest  332ms
+   ✓ lasso generator > scatter15: n within bounds, n dots inside the viewBox, spaced apart, ten apart from the rest  301ms
+
+ Test Files  10 passed (10)
+      Tests  71 passed (71)
+   Start at  20:00:45
+   Duration  1.28s (transform 756ms, setup 0ms, collect 1.44s, tests 2.12s, environment 873ms, prepare 808ms)
+
+GATE_EXIT=0
