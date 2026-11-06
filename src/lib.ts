@@ -13,6 +13,8 @@ export { kakooma } from './games/kakooma'
 export type { KakoomaRules } from './games/kakooma/rules'
 export { balance } from './games/balance'
 export type { BalanceRules } from './games/balance/rules'
+export { bridge } from './games/bridge'
+export type { BridgeRules } from './games/bridge/rules'
 
 import { games } from './engine/registry'
 
