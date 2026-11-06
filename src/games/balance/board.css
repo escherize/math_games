@@ -1,0 +1,56 @@
+/* Balance scale board. Every selector is .mg-* so the board can sit inside
+   another Console's page (Math Wiz); every colour falls back to a literal. */
+.mg-balance { display: flex; flex-direction: column; align-items: center; gap: clamp(20px, 5vw, 48px); touch-action: none; user-select: none; -webkit-user-select: none; width: 100%; max-width: 560px; }
+
+.mg-scale { position: relative; width: 100%; height: clamp(150px, 34vw, 210px); }
+.mg-post {
+  position: absolute; left: 50%; bottom: 0; transform: translateX(-50%);
+  width: 0; height: 0;
+  border-left: clamp(28px, 7vw, 44px) solid transparent; border-right: clamp(28px, 7vw, 44px) solid transparent;
+  border-bottom: clamp(70px, 18vw, 110px) solid var(--mg-line, #1d1d1b);
+}
+.mg-beam {
+  --mg-tilt: 0deg;
+  position: absolute; left: 50%; top: clamp(40px, 10vw, 60px); width: 100%; max-width: 520px;
+  height: 10px; border-radius: 5px; background: var(--mg-line, #1d1d1b);
+  transform: translateX(-50%) rotate(var(--mg-tilt)); transform-origin: 50% 50%;
+  transition: transform 220ms ease; z-index: 1;
+}
+.mg-beam.mg-level { background: var(--mg-accent, #4fb6f0); }
+.mg-beam::after {
+  content: ''; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: 22px; height: 22px; border-radius: 50%; background: var(--mg-line, #1d1d1b);
+}
+.mg-pan {
+  position: absolute; top: 50%; display: flex; gap: 8px; align-items: center; justify-content: center;
+  min-width: clamp(96px, 26vw, 150px); min-height: clamp(64px, 16vw, 92px); padding: 6px 10px; box-sizing: border-box;
+  background: var(--mg-pan, #f3f1ea); border: 2px solid var(--mg-line, #1d1d1b); border-radius: 0 0 14px 14px;
+  transform: translateY(-14px) rotate(calc(-1 * var(--mg-tilt))); transform-origin: 50% 0; transition: transform 220ms ease;
+}
+.mg-pan-left { left: 0; }
+.mg-pan-right { right: 0; }
+.mg-beam.mg-level .mg-pan { background: var(--mg-found, #f9dfc0); }
+
+.mg-weight, .mg-tile, .mg-slot {
+  --mg-size: clamp(48px, 12vw, 72px);
+  width: var(--mg-size); height: var(--mg-size); box-sizing: border-box;
+  display: grid; place-items: center; line-height: 1;
+  font: inherit; font-size: calc(var(--mg-size) * 0.5); font-weight: 600; color: var(--mg-ink, #1d1d1b);
+  border-radius: 10px;
+}
+.mg-weight { background: #fff; border: 2px solid var(--mg-line, #1d1d1b); }
+.mg-slot { border: 2px dashed var(--mg-muted, #6b6861); background: transparent; }
+.mg-slot .mg-tile { width: 100%; height: 100%; margin: -2px; }
+
+.mg-tray { display: flex; flex-wrap: wrap; justify-content: center; gap: clamp(12px, 3vw, 24px); }
+.mg-tile {
+  background: var(--mg-tile, #fff8e6); border: 2px solid var(--mg-line, #1d1d1b); cursor: grab;
+  touch-action: none; -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 2px 0 var(--mg-line, #1d1d1b);
+}
+.mg-tile.mg-dragging { cursor: grabbing; z-index: 2; position: relative; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); transition: none; }
+.mg-tile.mg-returning { animation: mg-return 150ms ease-out; }
+.mg-tile.mg-wrong { animation: mg-shake 300ms; background: #fde3e0; }
+.mg-tile.mg-placed { cursor: default; background: var(--mg-found, #f9dfc0); box-shadow: none; }
+@keyframes mg-return { from { transform: scale(1.06); } to { transform: scale(1); } }
+@keyframes mg-shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
