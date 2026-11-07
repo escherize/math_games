@@ -3,7 +3,7 @@
 .mg-halves {
   --mg-cols: 10;
   display: flex; flex-direction: column; align-items: center; gap: clamp(16px, 4vw, 32px);
-  touch-action: none; user-select: none; -webkit-user-select: none; width: 100%; max-width: 560px;
+  touch-action: none; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; width: 100%; max-width: 560px;
   padding: clamp(24px, 6vw, 40px) 0; box-sizing: border-box;
 }
 .mg-rail { position: relative; width: 100%; padding: 16px 0; }

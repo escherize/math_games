@@ -96,18 +96,29 @@ export function gesture(surface: HTMLElement | SVGElement, h: GestureHandlers): 
     e.preventDefault()
   }
 
+  // iOS Safari does not reliably honour `touch-action: none` on an inline
+  // SVG (the lasso board): the page starts to scroll under the finger and
+  // the pointer stream ends in pointercancel. Refusing the touchmove default
+  // while a gesture is live keeps the page still; touchstart is left alone
+  // so a tap on a <button> inside the surface still becomes a click.
+  const onTouchMove = (e: TouchEvent) => {
+    if (id !== null && e.cancelable) e.preventDefault()
+  }
+
   // HTML and SVG elements share the pointer event map; the union hides it from the overloads.
   const target = surface as HTMLElement
   target.addEventListener('pointerdown', onDown)
   target.addEventListener('pointermove', onMove)
   target.addEventListener('pointerup', onEnd)
   target.addEventListener('pointercancel', onEnd)
+  target.addEventListener('touchmove', onTouchMove, { passive: false })
   target.addEventListener('click', onClick, { capture: true })
   return () => {
     target.removeEventListener('pointerdown', onDown)
     target.removeEventListener('pointermove', onMove)
     target.removeEventListener('pointerup', onEnd)
     target.removeEventListener('pointercancel', onEnd)
+    target.removeEventListener('touchmove', onTouchMove)
     target.removeEventListener('click', onClick, { capture: true })
   }
 }

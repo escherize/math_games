@@ -1,6 +1,6 @@
 /* Hidden bonds board. Every selector is .mg-* so the board can sit inside
    another Console's page (Math Wiz); every colour falls back to a literal. */
-.mg-hidden { display: flex; flex-direction: column; align-items: center; gap: clamp(16px, 4vw, 32px); touch-action: none; user-select: none; -webkit-user-select: none; width: 100%; max-width: 560px; }
+.mg-hidden { display: flex; flex-direction: column; align-items: center; gap: clamp(16px, 4vw, 32px); touch-action: none; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; width: 100%; max-width: 560px; }
 
 .mg-hidden .mg-total {
   font: inherit; font-size: clamp(32px, 8vw, 48px); font-weight: 700; line-height: 1; color: var(--mg-ink, #1d1d1b);

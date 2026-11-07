@@ -45,6 +45,19 @@ describe('gesture', () => {
     expect(clicks).toBe(1)
   })
 
+  it('refuses the touchmove default while a gesture is live, so iOS does not scroll the page', () => {
+    const surface = document.createElement('div')
+    gesture(surface, {})
+    const idle = new Event('touchmove', { bubbles: true, cancelable: true })
+    surface.dispatchEvent(idle)
+    expect(idle.defaultPrevented).toBe(false)
+    pointer(surface, 'pointerdown', 10, 10)
+    const live = new Event('touchmove', { bubbles: true, cancelable: true })
+    surface.dispatchEvent(live)
+    expect(live.defaultPrevented).toBe(true)
+    pointer(surface, 'pointerup', 50, 10)
+  })
+
   it('swallows the click that trails a drag, once', () => {
     const surface = document.createElement('div')
     const button = document.createElement('button')

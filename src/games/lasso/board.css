@@ -3,7 +3,7 @@
 .mg-board.mg-lasso {
   display: block; width: 100%; max-width: 520px; height: auto; margin: 0 auto;
   background: #fff; border: 2px solid var(--mg-line, #1d1d1b); border-radius: 8px;
-  touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+  touch-action: none; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
   cursor: crosshair;
 }
 .mg-lasso .mg-dot { fill: var(--mg-ink, #1d1d1b); stroke: none; transition: fill 150ms; }
