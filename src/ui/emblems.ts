@@ -64,6 +64,17 @@ const dresses: Record<string, Dress> = {
       <circle cx="22" cy="42" r="2.5" fill="currentColor" fill-opacity="0.4"/>
       <circle cx="38" cy="38" r="2.5" fill="currentColor" fill-opacity="0.4"/>`),
   },
+  // A row of blocks with a cut through the middle and a knob on the cutter.
+  halves: {
+    hue: 100,
+    emblem: svg(`
+      <rect x="3" y="16" width="8" height="16" rx="2" fill="currentColor" fill-opacity="0.28"/>
+      <rect x="13" y="16" width="8" height="16" rx="2" fill="currentColor" fill-opacity="0.28"/>
+      <rect x="27" y="16" width="8" height="16" rx="2"/>
+      <rect x="37" y="16" width="8" height="16" rx="2"/>
+      <path d="M24 6v32"/>
+      <circle cx="24" cy="40" r="4" fill="currentColor"/>`),
+  },
 }
 
 const fallback: Dress = {
