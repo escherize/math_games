@@ -8,16 +8,29 @@ import confetti from 'canvas-confetti'
 import type { Cartridge, CartridgeEvent, CartridgeHandle } from '../engine/cartridge'
 import { starString, starsFor } from '../engine/levels'
 import { describeRules, loadRules, type PacedRules, type Preset } from '../engine/rules'
+import { shuffle, randomRng } from '../engine/rng'
 import { isFast } from '../engine/scoring'
 import type { StatsStore } from '../engine/stats'
 import { el } from './el'
 
 type Mode = 'practice' | 'challenge'
 
+/** One turn of a Mix round: a game at a level. */
+export interface MixEntry {
+  cart: Cartridge<PacedRules>
+  level: Preset<PacedRules>
+}
+
 export interface PlayContext {
   stats: StatsStore
   /** Set when the hub opened a level rather than free play. */
   level?: Preset<PacedRules>
+  /**
+   * Set for a Mix round: one puzzle from each entry in turn, dealt in a
+   * fresh order every round. Practice only, no stars: the levels stay
+   * per-game. The round is as long as the playlist.
+   */
+  playlist?: MixEntry[]
   /** Return to the hub. */
   exit(): void
   /** Open another level of the same game. */
@@ -42,6 +55,12 @@ export function mountPlay<R extends PacedRules>(container: HTMLElement, cart: Ca
   let timeLeft = rules.timerSeconds
   let timer: number | undefined
   let pending: number | undefined
+  const playlist = ctx.playlist
+  let order: MixEntry[] = []
+  let turn = 0
+  /** Puzzle keys shown this round, per game, so a Mix never repeats one either. */
+  const seen = new Map<string, Set<string>>()
+  const roundLength = () => (playlist ? playlist.length : rules.puzzlesPerRound)
   const session = { startedAt: Date.now(), puzzlesSolved: 0, correct: 0, wrong: 0, fast: 0 }
   let sessionRecorded = false
 
@@ -53,15 +72,16 @@ export function mountPlay<R extends PacedRules>(container: HTMLElement, cart: Ca
     endSession()
     ctx.exit()
   }
-  top.append(back, el('h1', '', level ? `${cart.title} · ${level.name}` : cart.title))
+  const title = el('h1', '', level ? `${cart.title} · ${level.name}` : playlist ? 'Mix' : cart.title)
+  top.append(back, title)
   const hud = el('div', 'hud')
-  const prompt = el('div', 'prompt', cart.prompt(rules))
+  const prompt = el('div', 'prompt', playlist ? '' : cart.prompt(rules))
   const slot = el('div', 'board-slot')
   const message = el('div', 'message')
   root.append(top, hud, prompt, slot, message)
   container.append(root)
 
-  if (level) start('practice')
+  if (level || playlist) start('practice')
   else showStart()
 
   function showStart() {
@@ -92,17 +112,35 @@ export function mountPlay<R extends PacedRules>(container: HTMLElement, cart: Ca
     session.startedAt = Date.now()
     session.puzzlesSolved = session.correct = session.wrong = session.fast = 0
     sessionRecorded = false
-    unmountBoard()
     message.textContent = ''
     message.className = 'message'
-    handle = cart.mount(slot, {
-      rules,
-      seed: Math.floor(Math.random() * 2 ** 31),
-      puzzles: mode === 'practice' ? rules.puzzlesPerRound : Infinity,
-      report,
-    })
+    seen.clear()
+    turn = 0
+    if (playlist) order = shuffle(randomRng, playlist)
+    mountBoard()
     armTimer()
     renderHud()
+  }
+
+  function seedNow(): number {
+    return Math.floor(Math.random() * 2 ** 31)
+  }
+
+  /** The board for this turn: the game itself, or the Mix entry whose turn it is. */
+  function mountBoard() {
+    unmountBoard()
+    if (!playlist) {
+      handle = cart.mount(slot, { rules, seed: seedNow(), puzzles: mode === 'practice' ? rules.puzzlesPerRound : Infinity, report })
+      return
+    }
+    const entry = order[turn]
+    const pacing = loadRules(entry.cart.id, entry.cart.rules)
+    const r: PacedRules = { ...entry.level.rules, puzzlesPerRound: pacing.puzzlesPerRound, fastSeconds: pacing.fastSeconds, timerSeconds: pacing.timerSeconds }
+    title.textContent = `Mix · ${entry.cart.title}`
+    prompt.textContent = entry.cart.prompt(r)
+    const avoid = seen.get(entry.cart.id) ?? new Set<string>()
+    seen.set(entry.cart.id, avoid)
+    handle = entry.cart.mount(slot, { rules: r, seed: seedNow(), puzzles: 1, avoid: [...avoid], report })
   }
 
   function unmountBoard() {
@@ -126,10 +164,11 @@ export function mountPlay<R extends PacedRules>(container: HTMLElement, cart: Ca
     }
     stopTimer()
     session.puzzlesSolved++
+    if (playlist) seen.get(order[turn].cart.id)?.add(e.key)
     const fast = isFast({ ms: e.ms, wrong: e.wrong }, rules.fastSeconds)
     if (fast) session.fast++
     renderHud()
-    if (mode === 'practice' && e.index + 1 >= e.of) {
+    if (mode === 'practice' && session.puzzlesSolved >= roundLength()) {
       finish('Round complete!')
       return
     }
@@ -140,7 +179,10 @@ export function mountPlay<R extends PacedRules>(container: HTMLElement, cart: Ca
       pending = undefined
       message.textContent = ''
       message.className = 'message'
-      handle?.next()
+      if (playlist) {
+        turn++
+        mountBoard()
+      } else handle?.next()
       armTimer()
       renderHud()
     }, 1100)
@@ -171,7 +213,7 @@ export function mountPlay<R extends PacedRules>(container: HTMLElement, cart: Ca
   function renderHud() {
     hud.innerHTML = ''
     if (mode === 'practice') {
-      hud.append(span('Puzzle ', `${Math.min(session.puzzlesSolved + 1, rules.puzzlesPerRound)} of ${rules.puzzlesPerRound}`))
+      hud.append(span('Puzzle ', `${Math.min(session.puzzlesSolved + 1, roundLength())} of ${roundLength()}`))
     } else {
       hud.append(span('Solved: ', String(session.puzzlesSolved)))
     }
@@ -205,7 +247,7 @@ export function mountPlay<R extends PacedRules>(container: HTMLElement, cart: Ca
     const choices = el('div', 'choices')
     let stars = 0
     if (level && mode === 'practice') {
-      const completed = session.puzzlesSolved >= rules.puzzlesPerRound
+      const completed = session.puzzlesSolved >= roundLength()
       stars = starsFor({ puzzles: session.puzzlesSolved, wrong: session.wrong, fast: session.fast, completed })
       const best = ctx.stats.levelStars(level.id)
       if (completed) ctx.stats.recordLevel(level.id, stars)
@@ -239,8 +281,8 @@ export function mountPlay<R extends PacedRules>(container: HTMLElement, cart: Ca
     if (sessionRecorded || session.correct + session.wrong === 0) return
     sessionRecorded = true
     ctx.stats.recordSession({
-      gameId: cart.id,
-      variant: describeRules(rules),
+      gameId: playlist ? 'mix' : cart.id,
+      variant: playlist ? `Mix of ${playlist.length} games` : describeRules(rules),
       mode,
       startedAt: session.startedAt,
       durationMs: Date.now() - session.startedAt,
