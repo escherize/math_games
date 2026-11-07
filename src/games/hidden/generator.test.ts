@@ -18,7 +18,7 @@ describe('hidden bonds rules', () => {
   it('every preset validates and refuses what it cannot play', () => {
     for (const p of presets) expect(hiddenRules.validate(p.rules)).toBeNull()
     expect(hiddenRules.validate({ ...presets[0].rules, op: 'subtract' })).toMatch(/addition/)
-    expect(hiddenRules.validate({ ...presets[0].rules, minN: 3, bondsRequired: 2 })).toMatch(/does not have/)
+    expect(hiddenRules.validate({ ...presets[0].rules, minN: 3, bondsRequired: 3 })).toMatch(/does not have/)
     expect(hiddenRules.validate({ ...presets[0].rules, minN: 6, maxN: 5 })).toMatch(/exceed/)
   })
 })

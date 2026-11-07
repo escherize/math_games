@@ -28,7 +28,7 @@ const base = (over: Partial<HiddenRules>): HiddenRules => ({
   maxN: 10,
   bondsRequired: 0,
   commutativeOnce: true,
-  allowZero: false,
+  allowZero: true,
   ...over,
 })
 

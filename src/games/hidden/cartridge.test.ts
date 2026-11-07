@@ -40,7 +40,7 @@ const tint = (root: HTMLElement) => Array.from(root.querySelectorAll('.mg-row .m
 describe('hidden bonds cartridge', () => {
   it('shelves each new split, wiggles a repeat, solves when enough bonds are found, holds until next()', () => {
     const root = document.createElement('div')
-    const { host, events } = fakeConsole(2, 42, { ...presets[1].rules, minN: 6, maxN: 6 })
+    const { host, events } = fakeConsole(2, 42, { ...presets[1].rules, minN: 6, maxN: 6, allowZero: false })
     const handle = hidden.mount(root, host)
     layout(root)
     expect(n(root)).toBe(6)
@@ -93,7 +93,7 @@ describe('hidden bonds cartridge', () => {
 
   it('a tap between two dots is a split too, and the tint follows the finger mid-drag', () => {
     const root = document.createElement('div')
-    const { host, events } = fakeConsole(1, 7, { ...presets[0].rules, minN: 4, maxN: 4 })
+    const { host, events } = fakeConsole(1, 7, { ...presets[0].rules, minN: 4, maxN: 4, allowZero: false })
     hidden.mount(root, host)
     layout(root)
     const row = root.querySelector('.mg-row')!
@@ -118,6 +118,20 @@ describe('hidden bonds cartridge', () => {
     slideTo(root, 4)
     expect(shelf(root)).toEqual(['2+4', '4+2'])
     expect(events.filter((e) => e.type === 'puzzle')).toEqual([expect.objectContaining({ response: '6=2+4;6=4+2' })])
+  })
+
+  it('counts the zero split by default: the divider rests at the end and 0 + n goes on the shelf', () => {
+    const root = document.createElement('div')
+    const { host, events } = fakeConsole(1, 5, { ...presets[0].rules, minN: 4, maxN: 4, bondsRequired: 1 })
+    hidden.mount(root, host)
+    layout(root)
+    const row = root.querySelector('.mg-row')!
+    pointer(row, 'pointerdown', gapX(2), 140)
+    pointer(row, 'pointermove', gapX(0) - 30, 140)
+    expect(tint(root)).toBe('RRRR')
+    pointer(row, 'pointerup', gapX(0) - 30, 140)
+    expect(shelf(root)).toEqual(['0+4'])
+    expect(events.filter((e) => e.type === 'puzzle')).toEqual([expect.objectContaining({ response: '4=0+4' })])
   })
 
   it('refuses rules it cannot play', () => {
