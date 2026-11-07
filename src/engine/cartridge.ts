@@ -16,14 +16,23 @@ export interface Console<R extends BondRules = BondRules> {
   seed: number
   /** Puzzles in this round; Infinity for an open-ended run. Math Wiz passes 1. */
   puzzles: number
+  /**
+   * Keys (see the puzzle event) of puzzles this player has already seen, so a
+   * Console that mounts one puzzle at a time can still avoid a repeat across
+   * mounts. A Cartridge never repeats a key within its own round regardless.
+   */
+  avoid?: readonly string[]
   report(event: CartridgeEvent): void
 }
 
 export type CartridgeEvent =
   /** One tap on the board. `ms` is time since the puzzle was shown. */
   | { type: 'tap'; correct: boolean; fact: string; ms: number }
-  /** The current puzzle is solved. The board holds until the Console calls `next()`. */
-  | { type: 'puzzle'; index: number; of: number; wrong: number; ms: number; response: string }
+  /**
+   * The current puzzle is solved. The board holds until the Console calls `next()`.
+   * `key` names the puzzle as the child perceives it (the numbers, not the layout), stable across seeds; feed it back as `avoid`.
+   */
+  | { type: 'puzzle'; index: number; of: number; wrong: number; ms: number; response: string; key: string }
 
 export interface CartridgeHandle {
   /** Show the next puzzle. True if one was shown; false before the current puzzle is solved or past the last one. */

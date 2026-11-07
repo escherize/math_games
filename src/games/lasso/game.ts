@@ -7,7 +7,7 @@
  */
 import type { CartridgeHandle, Console } from '../../engine/cartridge'
 import { gesture, inside, pathLength, type Point } from '../../engine/drag'
-import { mulberry32 } from '../../engine/rng'
+import { distinct } from '../../engine/variety'
 import { bondKey } from '../../engine/rules'
 import { generatePuzzle, RADIUS, VIEW_H, VIEW_W, type LassoPuzzle } from './generator'
 import { lassoRules, type LassoRules } from './rules'
@@ -40,6 +40,9 @@ export function mountLasso(container: HTMLElement, host: Console<LassoRules>): C
   container.append(style, board)
 
   let index = -1
+  /** What the child perceives as this puzzle; never shown twice in a round or, via host.avoid, a session. */
+  const puzzleKey = (p: LassoPuzzle) => String(p.n)
+  const used = new Set<string>(host.avoid ?? [])
   let puzzle: LassoPuzzle | null = null
   let circles: SVGCircleElement[] = []
   let wrong = 0
@@ -70,7 +73,8 @@ export function mountLasso(container: HTMLElement, host: Console<LassoRules>): C
 
   function show(i: number) {
     index = i
-    puzzle = generatePuzzle(mulberry32(host.seed + i), rules)
+    puzzle = distinct(host.seed, i, used, (rng) => generatePuzzle(rng, rules), puzzleKey)
+    used.add(puzzleKey(puzzle))
     wrong = 0
     holding = false
     shownAt = Date.now()
@@ -102,7 +106,7 @@ export function mountLasso(container: HTMLElement, host: Console<LassoRules>): C
       for (const c of caught) c.classList.add('mg-ten')
       loop.classList.add('mg-kept')
       host.report({ type: 'tap', correct: true, fact, ms })
-      host.report({ type: 'puzzle', index, of: host.puzzles, wrong, ms, response: `${puzzle.n}=10+${puzzle.n - 10}` })
+      host.report({ type: 'puzzle', index, of: host.puzzles, wrong, ms, response: `${puzzle.n}=10+${puzzle.n - 10}`, key: puzzleKey(puzzle) })
     } else {
       wrong++
       for (const c of caught) {

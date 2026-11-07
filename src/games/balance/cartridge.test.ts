@@ -139,6 +139,32 @@ describe('balance cartridge', () => {
     expect(root.querySelector('.mg-slot')!.classList.contains('mg-over')).toBe(false)
   })
 
+  it('never repeats a puzzle within a round, reports its key, and honours avoid across mounts', () => {
+    const keys: string[] = []
+    const root = document.createElement('div')
+    const { host, events } = fakeConsole(6, 11, presets[0].rules)
+    const handle = balance.mount(root, host)
+    for (let i = 0; i < 6; i++) {
+      layout(root)
+      dropOnSlot(missingTile(root))
+      handle.next()
+    }
+    for (const e of events) if (e.type === 'puzzle') keys.push(e.key)
+    expect(keys).toHaveLength(6)
+    expect(new Set(keys).size).toBe(6)
+    expect(keys[0]).toMatch(/^\d+=\d+\+\d+$/)
+    handle.destroy()
+
+    // A second Console with the same seed but told to avoid the first puzzle gets a different one.
+    const again = document.createElement('div')
+    const second = fakeConsole(1, 11, presets[0].rules)
+    balance.mount(again, { ...second.host, avoid: [keys[0]] })
+    layout(again)
+    dropOnSlot(missingTile(again))
+    const k = second.events.find((e) => e.type === 'puzzle')
+    expect(k && k.type === 'puzzle' ? k.key : null).not.toBe(keys[0])
+  })
+
   it('refuses rules it cannot play', () => {
     const root = document.createElement('div')
     const { host } = fakeConsole(1, 1, { ...presets[0].rules, op: 'subtract' })

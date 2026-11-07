@@ -7,7 +7,7 @@
  */
 import type { CartridgeHandle, Console } from '../../engine/cartridge'
 import { draggable, pick } from '../../engine/drag'
-import { mulberry32 } from '../../engine/rng'
+import { distinct } from '../../engine/variety'
 import { bondKey } from '../../engine/rules'
 import { el } from '../../ui/el'
 import { generatePuzzle, type Puzzle } from './generator'
@@ -26,6 +26,9 @@ export function mountBridge(container: HTMLElement, host: Console<BridgeRules>):
   container.append(style, board)
 
   let index = -1
+  /** What the child perceives as this puzzle; never shown twice in a round or, via host.avoid, a session. */
+  const puzzleKey = (p: Puzzle) => `${p.a}+${p.b}`
+  const used = new Set<string>(host.avoid ?? [])
   let puzzle: Puzzle | null = null
   let wrong = 0
   let shownAt = 0
@@ -40,7 +43,8 @@ export function mountBridge(container: HTMLElement, host: Console<BridgeRules>):
 
   function show(i: number) {
     index = i
-    puzzle = generatePuzzle(mulberry32(host.seed + i), rules)
+    puzzle = distinct(host.seed, i, used, (rng) => generatePuzzle(rng, rules), puzzleKey)
+    used.add(puzzleKey(puzzle))
     wrong = 0
     holding = false
     shownAt = Date.now()
@@ -130,7 +134,7 @@ export function mountBridge(container: HTMLElement, host: Console<BridgeRules>):
     if (!puzzle) return
     holding = true
     const { a, b, sum } = puzzle
-    host.report({ type: 'puzzle', index, of: host.puzzles, wrong, ms: Date.now() - shownAt, response: `${a}+${b}=10+${sum - 10}=${sum}` })
+    host.report({ type: 'puzzle', index, of: host.puzzles, wrong, ms: Date.now() - shownAt, response: `${a}+${b}=10+${sum - 10}=${sum}`, key: `${a}+${b}` })
   }
 
   show(0)

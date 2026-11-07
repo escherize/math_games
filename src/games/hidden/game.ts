@@ -8,7 +8,7 @@
  */
 import type { CartridgeHandle, Console } from '../../engine/cartridge'
 import { gesture, type Point } from '../../engine/drag'
-import { mulberry32 } from '../../engine/rng'
+import { distinct } from '../../engine/variety'
 import { bondKey } from '../../engine/rules'
 import { el } from '../../ui/el'
 import { generatePuzzle, type HiddenPuzzle } from './generator'
@@ -27,6 +27,9 @@ export function mountHidden(container: HTMLElement, host: Console<HiddenRules>):
   container.append(style, board)
 
   let index = -1
+  /** What the child perceives as this puzzle; never shown twice in a round or, via host.avoid, a session. */
+  const puzzleKey = (p: HiddenPuzzle) => String(p.n)
+  const used = new Set<string>(host.avoid ?? [])
   let puzzle: HiddenPuzzle | null = null
   let shownAt = 0
   let holding = false
@@ -98,6 +101,7 @@ export function mountHidden(container: HTMLElement, host: Console<HiddenRules>):
         wrong: 0,
         ms,
         response: found.map((f) => `${puzzle!.n}=${f.a}+${f.b}`).join(';'),
+        key: puzzleKey(puzzle!),
       })
     }
   }
@@ -106,7 +110,8 @@ export function mountHidden(container: HTMLElement, host: Console<HiddenRules>):
     detach?.()
     detach = null
     index = i
-    puzzle = generatePuzzle(mulberry32(host.seed + i), rules)
+    puzzle = distinct(host.seed, i, used, (rng) => generatePuzzle(rng, rules), puzzleKey)
+    used.add(puzzleKey(puzzle))
     shownAt = Date.now()
     holding = false
     found = []
