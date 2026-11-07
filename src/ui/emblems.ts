@@ -66,6 +66,17 @@ const dresses: Record<string, Dress> = {
   },
 }
 
+// A row of dots with the divider standing between them.
+dresses.hidden = {
+  hue: 350,
+  emblem: svg(`
+    <circle cx="8" cy="24" r="4" fill="currentColor"/>
+    <circle cx="18" cy="24" r="4" fill="currentColor"/>
+    <circle cx="30" cy="24" r="4" fill="currentColor" fill-opacity="0.28"/>
+    <circle cx="40" cy="24" r="4" fill="currentColor" fill-opacity="0.28"/>
+    <rect x="22" y="8" width="4" height="32" rx="2" fill="currentColor"/>`),
+}
+
 const fallback: Dress = {
   hue: 220,
   emblem: svg(`<circle cx="24" cy="24" r="16"/><path d="M24 14v20M14 24h20"/>`),

@@ -1,0 +1,54 @@
+/* Hidden bonds board. Every selector is .mg-* so the board can sit inside
+   another Console's page (Math Wiz); every colour falls back to a literal. */
+.mg-hidden { display: flex; flex-direction: column; align-items: center; gap: clamp(16px, 4vw, 32px); touch-action: none; user-select: none; -webkit-user-select: none; width: 100%; max-width: 560px; }
+
+.mg-hidden .mg-total {
+  font: inherit; font-size: clamp(32px, 8vw, 48px); font-weight: 700; line-height: 1; color: var(--mg-ink, #1d1d1b);
+  padding: 8px 20px; border: 2px solid var(--mg-line, #1d1d1b); border-radius: 14px; background: #fff;
+}
+
+.mg-hidden .mg-row {
+  position: relative; display: flex; gap: clamp(6px, 1.6vw, 10px); align-items: center; width: 100%; box-sizing: border-box;
+  padding: 16px clamp(30px, 7vw, 40px); border-radius: 18px; background: var(--mg-pan, #f3f1ea); border: 2px solid var(--mg-line, #1d1d1b);
+  touch-action: none; cursor: ew-resize;
+}
+.mg-hidden .mg-row .mg-dot {
+  flex: 1 1 0; aspect-ratio: 1; max-width: 44px; border-radius: 50%; box-sizing: border-box;
+  background: #fff; border: 2px solid var(--mg-line, #1d1d1b); transition: background 120ms ease, transform 120ms ease;
+}
+.mg-hidden .mg-row .mg-dot.mg-left { background: var(--mg-accent, #4fb6f0); }
+.mg-hidden .mg-row .mg-dot.mg-right { background: var(--mg-found, #f9dfc0); }
+.mg-hidden .mg-row.mg-done { border-color: var(--mg-accent, #4fb6f0); }
+.mg-hidden .mg-row.mg-done .mg-dot { transform: scale(1.08); }
+
+/* The handle: a fat invisible hit area with a thin pill drawn down its middle. */
+.mg-hidden .mg-divider {
+  position: absolute; top: -14px; bottom: -14px; width: 56px; margin-left: -28px; left: 50%;
+  display: grid; place-items: center; cursor: grab; z-index: 1;
+}
+.mg-hidden .mg-divider::after {
+  content: ''; width: 12px; height: 100%; border-radius: 6px; background: var(--mg-line, #1d1d1b);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25);
+}
+.mg-hidden .mg-divider.mg-dragging { cursor: grabbing; }
+.mg-hidden .mg-divider.mg-dragging::after { width: 16px; background: var(--mg-accent, #4fb6f0); }
+.mg-hidden .mg-divider.mg-settled { transition: left 120ms ease-out; }
+
+.mg-hidden .mg-shelf { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; min-height: 48px; width: 100%; }
+.mg-hidden .mg-bond {
+  display: flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 12px;
+  background: #fff; border: 2px solid var(--mg-line, #1d1d1b); animation: mg-shelve 200ms ease-out;
+}
+.mg-hidden .mg-bond .mg-dots { display: flex; gap: 3px; }
+.mg-hidden .mg-bond .mg-dot { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid var(--mg-line, #1d1d1b); box-sizing: border-box; }
+.mg-hidden .mg-bond .mg-dot.mg-left { background: var(--mg-accent, #4fb6f0); }
+.mg-hidden .mg-bond .mg-dot.mg-right { background: var(--mg-found, #f9dfc0); }
+.mg-hidden .mg-bond .mg-num { font: inherit; font-size: 20px; font-weight: 600; line-height: 1; color: var(--mg-ink, #1d1d1b); min-width: 1ch; text-align: center; }
+.mg-hidden .mg-bond .mg-plus { width: 10px; height: 10px; position: relative; }
+.mg-hidden .mg-bond .mg-plus::before, .mg-hidden .mg-bond .mg-plus::after { content: ''; position: absolute; background: var(--mg-muted, #6b6861); left: 50%; top: 50%; transform: translate(-50%, -50%); }
+.mg-hidden .mg-bond .mg-plus::before { width: 10px; height: 2px; }
+.mg-hidden .mg-bond .mg-plus::after { width: 2px; height: 10px; }
+.mg-hidden .mg-bond.mg-again { animation: mg-wiggle 300ms ease; }
+
+@keyframes mg-shelve { from { transform: translateY(-8px) scale(0.9); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes mg-wiggle { 25% { transform: rotate(-4deg); } 75% { transform: rotate(4deg); } }
