@@ -21,6 +21,8 @@ export { halves } from './games/halves'
 export type { HalvesRules } from './games/halves/rules'
 export { builder } from './games/builder'
 export type { BuilderRules } from './games/builder/rules'
+export { hidden } from './games/hidden'
+export type { HiddenRules } from './games/hidden/rules'
 
 import { games } from './engine/registry'
 

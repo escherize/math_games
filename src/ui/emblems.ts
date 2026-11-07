@@ -74,6 +74,7 @@ const dresses: Record<string, Dress> = {
       <rect x="37" y="16" width="8" height="16" rx="2"/>
       <path d="M24 6v32"/>
       <circle cx="24" cy="40" r="4" fill="currentColor"/>`),
+  },
   // A part-part-whole triangle: the whole on top, two parts below, one of them a dashed blank.
   builder: {
     hue: 48,
@@ -83,6 +84,17 @@ const dresses: Record<string, Dress> = {
       <rect x="29" y="28" width="14" height="14" rx="2" stroke-dasharray="3 3"/>
       <path d="M24 18v5M24 23l-12 5M24 23l12 5" stroke-width="2"/>`),
   },
+}
+
+// A row of dots with the divider standing between them.
+dresses.hidden = {
+  hue: 350,
+  emblem: svg(`
+    <circle cx="8" cy="24" r="4" fill="currentColor"/>
+    <circle cx="18" cy="24" r="4" fill="currentColor"/>
+    <circle cx="30" cy="24" r="4" fill="currentColor" fill-opacity="0.28"/>
+    <circle cx="40" cy="24" r="4" fill="currentColor" fill-opacity="0.28"/>
+    <rect x="22" y="8" width="4" height="32" rx="2" fill="currentColor"/>`),
 }
 
 const fallback: Dress = {
