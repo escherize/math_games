@@ -64,6 +64,15 @@ const dresses: Record<string, Dress> = {
       <circle cx="22" cy="42" r="2.5" fill="currentColor" fill-opacity="0.4"/>
       <circle cx="38" cy="38" r="2.5" fill="currentColor" fill-opacity="0.4"/>`),
   },
+  // A part-part-whole triangle: the whole on top, two parts below, one of them a dashed blank.
+  builder: {
+    hue: 48,
+    emblem: svg(`
+      <rect x="17" y="4" width="14" height="14" rx="2" fill="currentColor" fill-opacity="0.28"/>
+      <rect x="5" y="28" width="14" height="14" rx="2"/>
+      <rect x="29" y="28" width="14" height="14" rx="2" stroke-dasharray="3 3"/>
+      <path d="M24 18v5M24 23l-12 5M24 23l12 5" stroke-width="2"/>`),
+  },
 }
 
 const fallback: Dress = {
