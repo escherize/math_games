@@ -30,6 +30,8 @@ a { color: inherit; }
 .topbar h1 { font-size: 1.4rem; margin: 0; letter-spacing: -0.01em; }
 .topbar .back { background: none; border: 0; font-size: 1rem; padding: 8px 0; color: var(--muted); }
 .topbar .back:hover { color: var(--ink); }
+.topbar .mix { background: var(--ink, #1d1d1b); color: #fff; }
+@media (max-width: 480px) { .topbar .mix { font-size: 0.9rem; padding: 10px 12px; } }
 
 .btn {
   background: var(--ink); color: #fff; border: 0; border-radius: 999px;

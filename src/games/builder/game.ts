@@ -9,7 +9,7 @@
  */
 import type { CartridgeHandle, Console } from '../../engine/cartridge'
 import { draggable, overlaps, type Point } from '../../engine/drag'
-import { mulberry32 } from '../../engine/rng'
+import { distinct } from '../../engine/variety'
 import { bondKey } from '../../engine/rules'
 import { el } from '../../ui/el'
 import { generatePuzzle, valueAt, type BuilderPuzzle, type Slot, type Triangle } from './generator'
@@ -44,6 +44,9 @@ export function mountBuilder(container: HTMLElement, host: Console<BuilderRules>
   container.append(style, board)
 
   let index = -1
+  /** What the child perceives as this puzzle; never shown twice in a round or, via host.avoid, a session. */
+  const puzzleKey = (p: BuilderPuzzle) => p.triangles.map((t) => `${t.whole}=${[...t.parts].sort((x, y) => x - y).join('+')}`).join(';')
+  const used = new Set<string>(host.avoid ?? [])
   let puzzle: BuilderPuzzle | null = null
   let wrong = 0
   let shownAt = 0
@@ -72,7 +75,8 @@ export function mountBuilder(container: HTMLElement, host: Console<BuilderRules>
     for (const d of detachers) d()
     detachers = []
     index = i
-    puzzle = generatePuzzle(mulberry32(host.seed + i), rules)
+    puzzle = distinct(host.seed, i, used, (rng) => generatePuzzle(rng, rules), puzzleKey)
+    used.add(puzzleKey(puzzle))
     wrong = 0
     holding = false
     checking = false
@@ -148,7 +152,7 @@ export function mountBuilder(container: HTMLElement, host: Console<BuilderRules>
         host.report({ type: 'tap', correct: true, fact: bondKey('add', r.a, r.b), ms })
       }
       const response = results.map((r) => `${r.whole}=${Math.min(r.a, r.b)}+${Math.max(r.a, r.b)}`).join(';')
-      host.report({ type: 'puzzle', index, of: host.puzzles, wrong, ms, response })
+      host.report({ type: 'puzzle', index, of: host.puzzles, wrong, ms, response, key: puzzleKey(puzzle!) })
       return
     }
     checking = true

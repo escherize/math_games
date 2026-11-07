@@ -10,7 +10,7 @@
  */
 import type { CartridgeHandle, Console } from '../../engine/cartridge'
 import { draggable, hit, overlaps } from '../../engine/drag'
-import { mulberry32 } from '../../engine/rng'
+import { distinct } from '../../engine/variety'
 import { bondKey } from '../../engine/rules'
 import { el } from '../../ui/el'
 import { generatePuzzle, type BalancePuzzle } from './generator'
@@ -33,6 +33,9 @@ export function mountBalance(container: HTMLElement, host: Console<BalanceRules>
   container.append(style, board)
 
   let index = -1
+  /** What the child perceives as this puzzle; never shown twice in a round or, via host.avoid, a session. */
+  const puzzleKey = (p: BalancePuzzle) => `${p.whole}=${p.part}+${p.missing}`
+  const used = new Set<string>(host.avoid ?? [])
   let puzzle: BalancePuzzle | null = null
   let wrong = 0
   let shownAt = 0
@@ -59,7 +62,8 @@ export function mountBalance(container: HTMLElement, host: Console<BalanceRules>
     for (const d of detachers) d()
     detachers = []
     index = i
-    puzzle = generatePuzzle(mulberry32(host.seed + i), rules)
+    puzzle = distinct(host.seed, i, used, (rng) => generatePuzzle(rng, rules), puzzleKey)
+    used.add(puzzleKey(puzzle))
     wrong = 0
     holding = false
     shownAt = Date.now()
@@ -112,7 +116,7 @@ export function mountBalance(container: HTMLElement, host: Console<BalanceRules>
       slot.append(tile)
       tilt(puzzle.part + value)
       host.report({ type: 'tap', correct: true, fact, ms })
-      host.report({ type: 'puzzle', index, of: host.puzzles, wrong, ms, response: `${puzzle.whole}=${puzzle.part}+${value}` })
+      host.report({ type: 'puzzle', index, of: host.puzzles, wrong, ms, response: `${puzzle.whole}=${puzzle.part}+${value}`, key: puzzleKey(puzzle) })
       return true
     }
     wrong++

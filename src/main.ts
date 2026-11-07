@@ -1,10 +1,10 @@
 import './style.css'
 import { unlockedCount } from './engine/levels'
 import { findGame, games } from './engine/registry'
-import { describeRules, loadRules } from './engine/rules'
+import { describeRules, loadRules, type PacedRules, type Preset } from './engine/rules'
 import { StatsStore } from './engine/stats'
 import type { Cartridge } from './engine/cartridge'
-import { mountPlay, type PlayInstance } from './ui/play'
+import { mountPlay, type MixEntry, type PlayInstance } from './ui/play'
 import { dressOf, LOCK_SVG, STAR_SVG } from './ui/emblems'
 import { el, renderSettings } from './ui/settings'
 
@@ -22,7 +22,11 @@ function route() {
   const [, section, id, levelId] = location.hash.split('/')
   const game = id ? findGame(id) : undefined
   const level = game && levelId ? game.rules.presets.find((l) => l.id === levelId) : undefined
-  if (section === 'play' && game && (level || !levelId)) {
+  if (section === 'mix') {
+    app.innerHTML = ''
+    const playlist = mixPlaylist()
+    current = mountPlay(app, playlist[0].cart, { stats, playlist, exit: () => go('#/'), openLevel: () => go('#/') })
+  } else if (section === 'play' && game && (level || !levelId)) {
     app.innerHTML = ''
     current = mountPlay(app, game, { stats, level, exit: () => go('#/'), openLevel: (lid) => go(`#/play/${game.id}/${lid}`) })
   } else if (section === 'settings' && game) {
@@ -32,10 +36,28 @@ function route() {
   }
 }
 
+/** The level each game is on: the first without a star, or the last once every one has one. */
+function currentLevel(g: Cartridge<PacedRules>): Preset<PacedRules> {
+  const levels = g.rules.presets
+  const open = unlockedCount(
+    levels.map((l) => l.id),
+    (id) => stats.levelStars(id),
+  )
+  return levels[Math.min(open, levels.length) - 1]
+}
+
+/** Every game at its current level, in hub order; the round shuffles it. */
+function mixPlaylist(): MixEntry[] {
+  return games.map((cart) => ({ cart, level: currentLevel(cart) }))
+}
+
 function renderHub() {
   app.innerHTML = ''
   const top = el('div', 'topbar')
   top.append(el('h1', '', 'Math Games'))
+  const mix = el('button', 'btn mix', 'Mix: one puzzle from every game') as HTMLButtonElement
+  mix.onclick = () => go('#/mix')
+  top.append(mix)
   app.append(top)
 
   const grid = el('div', 'hub-grid')

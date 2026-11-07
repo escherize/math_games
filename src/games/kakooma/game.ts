@@ -5,7 +5,7 @@
  * puzzle to the Console. No text, no sound, no timer: the Console does those.
  */
 import type { CartridgeHandle, Console } from '../../engine/cartridge'
-import { mulberry32 } from '../../engine/rng'
+import { distinct } from '../../engine/variety'
 import { bondKey, operations } from '../../engine/rules'
 import { el } from '../../ui/el'
 import { generatePuzzle, type Pod, type Puzzle } from './generator'
@@ -38,6 +38,9 @@ export function mountKakooma(container: HTMLElement, host: Console<KakoomaRules>
   container.append(style, board)
 
   let index = -1
+  /** What the child perceives as this puzzle; never shown twice in a round or, via host.avoid, a session. */
+  const puzzleKey = (p: Puzzle) => JSON.stringify(p.pods)
+  const used = new Set<string>(host.avoid ?? [])
   let puzzle: Puzzle | null = null
   let solved = new Set<number>()
   let wrong = 0
@@ -48,7 +51,8 @@ export function mountKakooma(container: HTMLElement, host: Console<KakoomaRules>
 
   function show(i: number) {
     index = i
-    puzzle = generatePuzzle(mulberry32(host.seed + i), rules, { podCount: rules.podCount, podSize: rules.podSize })
+    puzzle = distinct(host.seed, i, used, (rng) => generatePuzzle(rng, rules, { podCount: rules.podCount, podSize: rules.podSize }), puzzleKey)
+    used.add(puzzleKey(puzzle))
     solved = new Set()
     wrong = 0
     responses = []
@@ -94,7 +98,7 @@ export function mountKakooma(container: HTMLElement, host: Console<KakoomaRules>
       host.report({ type: 'tap', correct: true, fact, ms })
       if (solved.size === puzzle.pods.length) {
         holding = true
-        host.report({ type: 'puzzle', index, of: host.puzzles, wrong, ms, response: responses.join(' ') })
+        host.report({ type: 'puzzle', index, of: host.puzzles, wrong, ms, response: responses.join(' '), key: puzzleKey(puzzle!) })
       }
     } else {
       wrong++
