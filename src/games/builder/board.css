@@ -1,0 +1,43 @@
+/* Bond builder board. Every selector is .mg-* so the board can sit inside
+   another Console's page (Math Wiz); every colour falls back to a literal. */
+.mg-builder { display: flex; flex-direction: column; align-items: center; gap: clamp(20px, 5vw, 44px); touch-action: none; user-select: none; -webkit-user-select: none; width: 100%; max-width: 640px; }
+
+.mg-triangles { display: flex; flex-wrap: wrap; justify-content: center; gap: clamp(16px, 4vw, 36px); }
+.mg-triangle {
+  --mg-size: clamp(56px, 14vw, 84px);
+  position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; justify-items: center;
+  padding: 10px 10px 12px; border-radius: 16px; background: var(--mg-pan, #f3f1ea); border: 2px solid var(--mg-line, #1d1d1b);
+  transition: background 160ms ease, border-color 160ms ease;
+}
+.mg-triangle.mg-valid { background: var(--mg-found, #f9dfc0); border-color: var(--mg-accent, #4fb6f0); }
+.mg-triangle.mg-wrong { animation: mg-shake 300ms; background: #fde3e0; }
+.mg-triangle::before {
+  /* The strut from the whole down to the parts. */
+  content: ''; position: absolute; left: 50%; top: calc(10px + var(--mg-size) - 2px); width: 2px; height: 10px;
+  background: var(--mg-line, #1d1d1b); transform: translateX(-50%);
+}
+.mg-whole { grid-column: 1 / span 2; }
+
+.mg-whole, .mg-part, .mg-tile {
+  width: var(--mg-size); height: var(--mg-size); box-sizing: border-box;
+  display: grid; place-items: center; line-height: 1;
+  font: inherit; font-size: calc(var(--mg-size) * 0.5); font-weight: 600; color: var(--mg-ink, #1d1d1b);
+  border-radius: 10px;
+}
+.mg-given { background: #fff; border: 2px solid var(--mg-line, #1d1d1b); }
+.mg-blank { position: relative; border: 2px dashed var(--mg-muted, #6b6861); background: transparent; transition: background 120ms ease, border-color 120ms ease; }
+.mg-blank.mg-over { border-color: var(--mg-accent, #4fb6f0); border-style: solid; background: rgba(79, 182, 240, 0.18); }
+.mg-blank .mg-tile { width: 100%; height: 100%; margin: -2px; }
+
+.mg-tray { --mg-size: clamp(56px, 14vw, 84px); display: flex; flex-wrap: wrap; justify-content: center; gap: clamp(12px, 3vw, 24px); min-height: var(--mg-size); }
+.mg-tile {
+  background: var(--mg-tile, #fff8e6); border: 2px solid var(--mg-line, #1d1d1b); cursor: grab;
+  touch-action: none; -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 2px 0 var(--mg-line, #1d1d1b);
+}
+.mg-tile.mg-dragging { cursor: grabbing; z-index: 2; position: relative; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); transition: none; }
+.mg-tile.mg-returning { animation: mg-return 150ms ease-out; }
+.mg-tile.mg-placed { box-shadow: none; }
+.mg-valid .mg-tile { cursor: default; background: var(--mg-found, #f9dfc0); }
+@keyframes mg-return { from { transform: scale(1.06); } to { transform: scale(1); } }
+@keyframes mg-shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }

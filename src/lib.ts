@@ -19,6 +19,8 @@ export { lasso } from './games/lasso'
 export type { LassoRules } from './games/lasso/rules'
 export { halves } from './games/halves'
 export type { HalvesRules } from './games/halves/rules'
+export { builder } from './games/builder'
+export type { BuilderRules } from './games/builder/rules'
 
 import { games } from './engine/registry'
 
