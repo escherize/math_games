@@ -97,6 +97,76 @@ dresses.hidden = {
     <rect x="22" y="8" width="4" height="32" rx="2" fill="currentColor"/>`),
 }
 
+// Two cards, a different picture of the same number on each.
+dresses.tanga = {
+  hue: 180,
+  emblem: svg(`
+    <rect x="3" y="8" width="20" height="32" rx="3"/>
+    <rect x="25" y="8" width="20" height="32" rx="3"/>
+    <circle cx="9" cy="18" r="2.5" fill="currentColor"/>
+    <circle cx="17" cy="18" r="2.5" fill="currentColor"/>
+    <circle cx="13" cy="30" r="2.5" fill="currentColor"/>
+    <path d="M31 16v16M36 16v16M41 16v16" stroke-width="2.5"/>`),
+}
+
+// A sum on top; below, the split that reaches ten is filled in.
+dresses.other = {
+  hue: 230,
+  emblem: svg(`
+    <rect x="12" y="4" width="24" height="12" rx="2"/>
+    <path d="M24 16v6M24 22l-12 6M24 22l12 6" stroke-width="2"/>
+    <rect x="3" y="30" width="16" height="12" rx="2" fill="currentColor" fill-opacity="0.28"/>
+    <rect x="29" y="30" width="16" height="12" rx="2" stroke-dasharray="3 3"/>`),
+}
+
+// A grid of tiles with one matched pair tinted.
+dresses.pairs = {
+  hue: 320,
+  emblem: svg(`
+    <rect x="4" y="4" width="12" height="12" rx="2" fill="currentColor" fill-opacity="0.28"/>
+    <rect x="18" y="4" width="12" height="12" rx="2"/>
+    <rect x="32" y="4" width="12" height="12" rx="2"/>
+    <rect x="4" y="18" width="12" height="12" rx="2"/>
+    <rect x="18" y="18" width="12" height="12" rx="2"/>
+    <rect x="32" y="18" width="12" height="12" rx="2" fill="currentColor" fill-opacity="0.28"/>
+    <rect x="4" y="32" width="12" height="12" rx="2"/>
+    <rect x="18" y="32" width="12" height="12" rx="2"/>
+    <rect x="32" y="32" width="12" height="12" rx="2"/>
+    <path d="M10 10L38 24" stroke-dasharray="3 3" stroke-width="2"/>`),
+}
+
+// Three tiles of a 3x3 joined into a set.
+dresses.sets = {
+  hue: 12,
+  emblem: svg(`
+    <rect x="4" y="4" width="12" height="12" rx="2"/>
+    <rect x="18" y="4" width="12" height="12" rx="2" fill="currentColor" fill-opacity="0.28"/>
+    <rect x="32" y="4" width="12" height="12" rx="2"/>
+    <rect x="4" y="18" width="12" height="12" rx="2" fill="currentColor" fill-opacity="0.28"/>
+    <rect x="18" y="18" width="12" height="12" rx="2"/>
+    <rect x="32" y="18" width="12" height="12" rx="2"/>
+    <rect x="4" y="32" width="12" height="12" rx="2"/>
+    <rect x="18" y="32" width="12" height="12" rx="2"/>
+    <rect x="32" y="32" width="12" height="12" rx="2" fill="currentColor" fill-opacity="0.28"/>
+    <path d="M24 10L10 24L38 38" stroke-width="2" stroke-dasharray="3 3"/>`),
+}
+
+// A die above a triangle of pins, one knocked over.
+dresses.pins = {
+  hue: 75,
+  emblem: svg(`
+    <rect x="17" y="2" width="14" height="14" rx="3"/>
+    <circle cx="21" cy="6" r="1.6" fill="currentColor"/>
+    <circle cx="27" cy="12" r="1.6" fill="currentColor"/>
+    <circle cx="24" cy="9" r="1.6" fill="currentColor"/>
+    <circle cx="10" cy="26" r="4"/>
+    <circle cx="24" cy="26" r="4" fill="currentColor" fill-opacity="0.28"/>
+    <circle cx="38" cy="26" r="4"/>
+    <circle cx="17" cy="38" r="4"/>
+    <circle cx="31" cy="38" r="4"/>
+    <path d="M6 44l9-5" stroke-width="2"/>`),
+}
+
 const fallback: Dress = {
   hue: 220,
   emblem: svg(`<circle cx="24" cy="24" r="16"/><path d="M24 14v20M14 24h20"/>`),

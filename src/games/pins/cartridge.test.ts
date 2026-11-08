@@ -4,7 +4,7 @@ import type { CartridgeEvent, Console } from '../../engine/cartridge'
 import { pins } from './index'
 import { presets, type PinsRules } from './rules'
 
-function fakeConsole(puzzles: number, seed = 42, rules: PinsRules = presets[1].rules) {
+function fakeConsole(puzzles: number, seed = 42, rules: PinsRules = presets[2].rules) {
   const events: CartridgeEvent[] = []
   const host: Console<PinsRules> = { rules, seed, puzzles, report: (e) => events.push(e) }
   return { host, events }
@@ -38,7 +38,8 @@ function solve(root: HTMLElement, allowDifference = false, preferPair = false) {
 describe('pins cartridge', () => {
   it('racks the pins, shows the roll, knocks the matching pin, and holds until next()', () => {
     const root = document.createElement('div')
-    const { host, events } = fakeConsole(2, 42)
+    // Ten pins with one die: every roll has a standing match until that pin falls.
+    const { host, events } = fakeConsole(2, 42, { ...presets[2].rules, dice: 1 })
     const handle = pins.mount(root, host)
     expect(root.querySelectorAll('button.mg-pin')).toHaveLength(10)
     expect(root.querySelectorAll('.mg-lane .mg-row')).toHaveLength(4)

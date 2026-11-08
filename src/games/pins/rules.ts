@@ -32,13 +32,13 @@ const base = (over: Partial<PinsRules>): PinsRules => ({
 
 export const presets: Preset<PinsRules>[] = [
   { id: 'six', name: 'Six pins, one die', rules: base({ pins: 6, max: 6, dice: 1 }) },
-  { id: 'ten', name: 'Ten pins, one die', rules: base({ pins: 10, dice: 1 }) },
-  { id: 'twodice', name: 'Ten pins, two dice', rules: base({ pins: 10, dice: 2 }) },
+  { id: 'sixtwo', name: 'Six pins, two dice', rules: base({ pins: 6, max: 6, dice: 2 }) },
+  { id: 'ten', name: 'Ten pins, two dice', rules: base({ pins: 10, dice: 2 }) },
   { id: 'minus', name: 'Add or take away', rules: base({ pins: 10, dice: 2, allowDifference: true }) },
 ]
 
 export const pinsRules: RulesSpec<PinsRules> = {
-  defaults: presets[1].rules,
+  defaults: presets[2].rules,
   presets,
   fields: [
     {

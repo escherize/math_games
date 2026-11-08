@@ -31,26 +31,26 @@ export function dieSvg(n: number): string {
   return wrap(`<rect x="6" y="6" width="88" height="88" rx="16" fill="none" stroke="currentColor" stroke-width="4"/>${pips}`, 'die')
 }
 
-/** A 5x2 frame with n filled cells, filled left to right along the top row first; two frames side by side past 10. */
+/** A 5x2 frame with n filled cells, filled left to right along the top row first; a second frame below it past 10. */
 export function tenFrameSvg(n: number): string {
   if (!(n >= 0 && n <= 20)) throw new RangeError(`a ten-frame picture shows 0 to 20, not ${n}`)
   const frames = n > 10 ? 2 : 1
-  const cellW = frames === 2 ? 9 : 17
-  const cellH = cellW * 1.1
+  const cellW = 17
+  const cellH = frames === 2 ? 16 : 18
   const frameW = cellW * 5
-  const gapBetween = 6
-  const totalW = frameW * frames + gapBetween * (frames - 1)
-  const x0 = (100 - totalW) / 2
-  const y0 = (100 - cellH * 2) / 2
+  const gap = 8
+  const totalH = cellH * 2 * frames + gap * (frames - 1)
+  const x0 = (100 - frameW) / 2
+  const y0 = (100 - totalH) / 2
   let body = ''
   let left = n
   for (let f = 0; f < frames; f++) {
-    const fx = x0 + f * (frameW + gapBetween)
+    const fy = y0 + f * (cellH * 2 + gap)
     for (let i = 0; i < 10; i++) {
       const col = i % 5
       const row = Math.floor(i / 5)
-      const cx = fx + col * cellW
-      const cy = y0 + row * cellH
+      const cx = x0 + col * cellW
+      const cy = fy + row * cellH
       body += `<rect x="${cx}" y="${cy}" width="${cellW}" height="${cellH}" fill="none" stroke="currentColor" stroke-width="1.5"/>`
       if (left > 0) {
         body += `<circle class="mg-dot" cx="${cx + cellW / 2}" cy="${cy + cellH / 2}" r="${cellW * 0.34}" fill="currentColor"/>`
@@ -62,33 +62,27 @@ export function tenFrameSvg(n: number): string {
 }
 
 /**
- * Dots to subitize: 1..6 as die faces, 7..10 as a 5-group beside the rest,
- * 11..20 as two 5-rows and the rest below. Fixed layouts, never a random
- * scatter, so the same n always looks the same and the groups show.
+ * Dots to subitize: 1..6 as die faces, 7..20 as rows of five with the
+ * remainder below, so the fives show. Fixed layouts, never a random
+ * scatter, so the same n always looks the same.
  */
 export function dotsSvg(n: number): string {
   if (!(n >= 0 && n <= 20)) throw new RangeError(`a dots picture shows 0 to 20, not ${n}`)
   const pts: Array<[number, number]> = []
   if (n <= 6) {
     for (const p of PIPS[n] ?? []) pts.push(p)
-  } else if (n <= 10) {
-    // a quincunx of five on the left, the rest as a column or 2x2 on the right
-    for (const [x, y] of PIPS[5]) pts.push([x * 0.55 + 6, y])
-    const rest = n - 5
-    const col = [[72, 50], [72, 30], [72, 70], [88, 50], [88, 30]] as Array<[number, number]>
-    const arr: Array<[number, number]> =
-      rest === 1 ? [[76, 50]] : rest === 2 ? [[76, 36], [76, 64]] : rest === 3 ? [[76, 28], [76, 50], [76, 72]] : rest === 4 ? [[68, 36], [68, 64], [86, 36], [86, 64]] : col
-    pts.push(...arr)
   } else {
-    // two rows of five, then the remainder in a third row
-    const rows = [Math.min(5, n), Math.min(5, n - 5), n - 10]
+    const rows: number[] = []
+    for (let left = n; left > 0; left -= 5) rows.push(Math.min(5, left))
+    const pitch = rows.length <= 2 ? 18 : 15
+    const y0 = 50 - ((rows.length - 1) * pitch * 1.3) / 2
     rows.forEach((count, r) => {
-      const y = 24 + r * 26
-      const span = (count - 1) * 16
-      for (let i = 0; i < count; i++) pts.push([50 - span / 2 + i * 16, y])
+      const y = y0 + r * pitch * 1.3
+      const span = (count - 1) * pitch
+      for (let i = 0; i < count; i++) pts.push([50 - span / 2 + i * pitch, y])
     })
   }
-  const r = n <= 6 ? 9 : n <= 10 ? 7 : 6
+  const r = n <= 6 ? 9 : n <= 10 ? 7 : 5.5
   return wrap(pts.map(([x, y]) => `<circle class="mg-dot" cx="${x}" cy="${y}" r="${r}" fill="currentColor"/>`).join(''), 'dots')
 }
 

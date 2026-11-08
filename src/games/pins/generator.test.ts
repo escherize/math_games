@@ -19,7 +19,7 @@ describe('pins rules', () => {
   })
 
   it('pins the bond core to the rack so describeRules reads sensibly', () => {
-    const r = { ...presets[1].rules, min: 4, max: 99 }
+    const r = { ...presets[2].rules, min: 4, max: 99 }
     pinsRules.validate(r)
     expect([r.op, r.min, r.max, r.maxResult, r.step]).toEqual(['add', 1, 10, 12, 1])
   })
@@ -46,7 +46,7 @@ describe('pins generator', () => {
   it('returns null when the standing pins cannot make any roll', () => {
     expect(generateRoll(mulberry32(1), presets[1].rules, [])).toBeNull()
     expect(generateRoll(mulberry32(1), presets[2].rules, [1])).toBeNull()
-    expect(generateRoll(mulberry32(1), presets[1].rules, [7, 9])).toBeNull()
+    expect(generateRoll(mulberry32(1), presets[0].rules, [7, 9])).toBeNull()
   })
 
   for (const p of presets) {
