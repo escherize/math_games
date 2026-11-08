@@ -1,0 +1,25 @@
+/* Pins board. Every selector is .mg-* so the board can sit inside another
+   Console's page (Math Wiz); every colour falls back to a literal. */
+.mg-pins { display: flex; flex-direction: column; align-items: center; gap: clamp(16px, 4vw, 32px); width: 100%; touch-action: manipulation; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+
+.mg-pins .mg-roll { display: flex; gap: clamp(10px, 2.5vw, 18px); justify-content: center; }
+.mg-pins .mg-die { width: clamp(64px, 15vw, 96px); height: clamp(64px, 15vw, 96px); color: var(--mg-ink, #1d1d1b); }
+.mg-pins .mg-die .mg-pic { width: 100%; height: 100%; display: block; }
+
+.mg-pins .mg-lane { display: flex; flex-direction: column; align-items: center; gap: clamp(6px, 1.5vw, 12px); padding: clamp(10px, 2.5vw, 20px); border-radius: 18px; background: var(--mg-pan, #f3f1ea); }
+.mg-pins .mg-row { display: flex; justify-content: center; gap: clamp(6px, 1.5vw, 12px); }
+
+.mg-pins .mg-pin {
+  --mg-size: clamp(52px, 12vw, 76px);
+  width: var(--mg-size); height: var(--mg-size); border-radius: 50%; padding: 0; margin: 0;
+  display: grid; place-items: center; cursor: pointer; line-height: 1;
+  font: inherit; font-size: calc(var(--mg-size) * 0.46); font-weight: 700; color: var(--mg-ink, #1d1d1b);
+  background: #fff; border: 2px solid var(--mg-line, #1d1d1b);
+  transition: transform 250ms ease, opacity 250ms ease, background 120ms;
+  touch-action: manipulation; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none;
+}
+.mg-pins .mg-pin.mg-picked { background: var(--mg-accent, #4fb6f0); color: #fff; border-color: var(--mg-accent, #4fb6f0); }
+.mg-pins .mg-pin.mg-down { transform: rotate(70deg); opacity: 0.35; pointer-events: none; }
+.mg-pins .mg-pin.mg-wrong { animation: mg-shake 300ms; background: #fde3e0; }
+.mg-pins.mg-done .mg-roll { transform: scale(1.06); transition: transform 250ms ease; }
+@keyframes mg-shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
