@@ -2,7 +2,7 @@
 
 A hub of small math games for kids, in the style of neal.fun. Static web app: runs in any browser, installs to an iPad home screen as a full-screen app, needs no server.
 
-The first game is Kakooma (Greg Tang's puzzle): in each pod, tap the number that two others make.
+Twelve boards, most of them Greg Tang's puzzles with the race taken out: Kakooma (tap the number two others make), Balance Scale, Bridge to Ten, Lasso Ten, Hidden Bonds, Bond Builder, Halves, Same Number (the same quantity drawn two ways), The Other Number (which split of 6 helps 8 reach ten), Pairs, Three Together (NumSkill) and Pins (Math Limbo with a die).
 
 ## Run
 
@@ -34,7 +34,7 @@ Another Console imports the module, picks a cartridge from `games`, and calls `m
 ## Layout
 
 ```
-src/engine/    cartridge contract, rules, stats, rng, registry   # shared by every game
+src/engine/    cartridge contract, rules, stats, rng, registry, pictures (die, ten-frame, dots, tally)
 src/ui/        hub console (play), settings form (schema driven)
 src/games/     one directory per game
   kakooma/     rules + presets, generator (pure, tested), board (the Cartridge, tested)

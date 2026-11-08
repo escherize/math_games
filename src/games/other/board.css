@@ -1,0 +1,52 @@
+/* The Other Number board. Every selector is .mg-* so the board can sit inside
+   another Console's page (Math Wiz); every colour falls back to a literal. */
+.mg-other {
+  display: flex; flex-direction: column; align-items: center; gap: clamp(20px, 5vw, 40px);
+  width: 100%; max-width: 560px; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+  user-select: none; -webkit-user-select: none;
+}
+
+.mg-other .mg-num { font: inherit; font-weight: 700; line-height: 1; color: var(--mg-ink, #1d1d1b); min-width: 1ch; text-align: center; }
+
+/* The plus is drawn, not typed: two bars sized by the em of the numerals beside it. */
+.mg-other .mg-plus { position: relative; width: 0.5em; height: 0.5em; flex: none; }
+.mg-other .mg-plus::before, .mg-other .mg-plus::after {
+  content: ''; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  background: var(--mg-muted, #6b6861); border-radius: 2px;
+}
+.mg-other .mg-plus::before { width: 100%; height: 0.1em; }
+.mg-other .mg-plus::after { width: 0.1em; height: 100%; }
+
+.mg-other .mg-sum {
+  display: flex; align-items: center; gap: 0.3em; font-size: clamp(40px, 10vw, 64px);
+  padding: 8px 24px; border-radius: 18px; background: var(--mg-pan, #f3f1ea);
+}
+
+.mg-other .mg-options { display: flex; flex-wrap: wrap; justify-content: center; gap: clamp(12px, 3vw, 20px); width: 100%; }
+.mg-other .mg-option {
+  display: flex; align-items: center; justify-content: center; gap: 0.3em; min-width: 120px; min-height: 72px; padding: 8px 20px; margin: 0;
+  font: inherit; font-size: clamp(28px, 7vw, 40px); cursor: pointer;
+  background: #fff; border: 2px solid var(--mg-line, #1d1d1b); border-radius: 14px;
+  transition: background 120ms, opacity 200ms, border-color 120ms;
+  touch-action: manipulation; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none;
+}
+.mg-other .mg-option .mg-plus::before, .mg-other .mg-option .mg-plus::after { background: var(--mg-line, #1d1d1b); }
+.mg-other .mg-option.mg-found { background: var(--mg-found, #f9dfc0); border-color: var(--mg-accent, #4fb6f0); }
+.mg-other .mg-option.mg-muted { opacity: 0.5; }
+
+.mg-other .mg-totals { display: flex; flex-wrap: wrap; justify-content: center; gap: clamp(12px, 3vw, 20px); animation: mg-arrive 200ms ease-out; }
+.mg-other .mg-total {
+  width: clamp(72px, 18vw, 96px); height: clamp(72px, 18vw, 96px); padding: 0; margin: 0; display: grid; place-items: center;
+  font: inherit; font-size: clamp(28px, 7vw, 40px); font-weight: 700; line-height: 1; color: var(--mg-ink, #1d1d1b); cursor: pointer;
+  background: #fff; border: 2px solid var(--mg-line, #1d1d1b); border-radius: 14px;
+  transition: background 120ms, opacity 200ms, border-color 120ms;
+  touch-action: manipulation; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none;
+}
+.mg-other .mg-total.mg-found { background: var(--mg-found, #f9dfc0); border-color: var(--mg-accent, #4fb6f0); }
+.mg-other .mg-total.mg-muted { opacity: 0.5; }
+
+.mg-other .mg-option.mg-wrong, .mg-other .mg-total.mg-wrong { animation: mg-shake 300ms; background: #fde3e0; }
+.mg-other.mg-done .mg-sum { background: var(--mg-found, #f9dfc0); }
+
+@keyframes mg-shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+@keyframes mg-arrive { from { transform: translateY(-8px); opacity: 0; } to { transform: none; opacity: 1; } }

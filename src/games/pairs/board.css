@@ -1,0 +1,30 @@
+/* Pairs board. Every selector is .mg-* so the board can sit inside another
+   Console's page (Math Wiz); every colour falls back to a literal. */
+.mg-pairs {
+  display: flex; flex-direction: column; align-items: center; gap: clamp(16px, 4vw, 28px);
+  width: 100%; max-width: 560px;
+  touch-action: manipulation; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none;
+}
+
+.mg-pairs .mg-target {
+  font: inherit; font-size: clamp(32px, 8vw, 48px); font-weight: 700; line-height: 1; color: var(--mg-ink, #1d1d1b);
+  padding: 8px 20px; border: 2px solid var(--mg-line, #1d1d1b); border-radius: 14px; background: #fff;
+  transition: border-color 120ms, background 120ms;
+}
+.mg-pairs.mg-done .mg-target { border-color: var(--mg-accent, #4fb6f0); background: var(--mg-found, #f9dfc0); }
+
+.mg-pairs .mg-grid { display: grid; grid-template-columns: repeat(var(--mg-cols, 3), max-content); gap: 8px; justify-content: center; }
+
+.mg-pairs .mg-cell {
+  --mg-size: clamp(56px, 13vw, 88px);
+  width: var(--mg-size); height: var(--mg-size);
+  display: grid; place-items: center; padding: 0; margin: 0;
+  font: inherit; font-size: calc(var(--mg-size) * 0.42); font-weight: 400; line-height: 1; color: var(--mg-ink, #1d1d1b); cursor: pointer;
+  background: #fff; border: 1px solid var(--mg-line, #1d1d1b); border-radius: 10px;
+  transition: background 120ms, color 120ms, transform 120ms;
+  touch-action: manipulation; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none;
+}
+.mg-pairs .mg-cell.mg-picked { background: var(--mg-accent, #4fb6f0); color: #fff; border-color: var(--mg-accent, #4fb6f0); transform: scale(1.06); }
+.mg-pairs .mg-cell.mg-found { background: var(--mg-found, #f9dfc0); color: var(--mg-muted, #6b6861); pointer-events: none; }
+.mg-pairs .mg-cell.mg-wrong { animation: mg-shake 300ms; background: #fde3e0; color: var(--mg-ink, #1d1d1b); }
+@keyframes mg-shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
