@@ -1,8 +1,8 @@
 /**
  * One roll for the Pins board. The pins standing when the roll is made are
  * part of the puzzle: a roll is only drawn if the child can knock it down
- * from them, as one pin, two pins that add to it or (when allowed) two pins
- * that differ by it.
+ * from them, as one pin, two pins that add to it, (when allowed) two pins
+ * that differ by it, or (with manyPins) any set of pins that adds to it.
  */
 import { randInt, type Rng } from '../../engine/rng'
 import type { PinsRules } from './rules'
@@ -20,29 +20,45 @@ export function rollRange(dice: number): [number, number] {
   return dice === 2 ? [2, 12] : [1, 6]
 }
 
-/** Every total the standing pins can make within the dice's range, ascending. */
-export function achievable(standing: readonly number[], r: Pick<PinsRules, 'dice' | 'allowDifference'>): number[] {
-  const [lo, hi] = rollRange(r.dice)
-  const totals = new Set<number>()
-  for (const a of standing) totals.add(a)
-  for (let i = 0; i < standing.length; i++)
-    for (let j = i + 1; j < standing.length; j++) {
-      totals.add(standing[i] + standing[j])
-      if (r.allowDifference) totals.add(Math.abs(standing[i] - standing[j]))
-    }
-  return [...totals].filter((t) => t >= lo && t <= hi).sort((a, b) => a - b)
+type Knock = Pick<PinsRules, 'allowDifference'> & Partial<Pick<PinsRules, 'manyPins'>>
+
+/** How many pins one knock may use. */
+export function maxPinsPerKnock(r: Partial<Pick<PinsRules, 'manyPins'>>): number {
+  return r.manyPins ? Infinity : 2
 }
 
-/** Standing pins that knock the roll down: the pin itself, pairs that add to it, pairs that differ by it. */
-export function waysToMake(roll: number, standing: readonly number[], r: Pick<PinsRules, 'allowDifference'>): number[][] {
-  const out: number[][] = []
-  for (const a of standing) if (a === roll) out.push([a])
-  for (let i = 0; i < standing.length; i++)
-    for (let j = i + 1; j < standing.length; j++) {
-      const a = standing[i]
-      const b = standing[j]
-      if (a + b === roll || (r.allowDifference && Math.abs(a - b) === roll)) out.push([a, b])
-    }
+/**
+ * Every set of standing pins (ascending) that adds to the roll, smallest
+ * sets first, plus pairs that differ by it when allowed. With manyPins the
+ * sets may be any size; otherwise one or two pins.
+ */
+export function waysToMake(roll: number, standing: readonly number[], r: Knock): number[][] {
+  const limit = maxPinsPerKnock(r)
+  const sorted = [...standing].sort((a, b) => a - b)
+  const sums: number[][] = []
+  const walk = (start: number, chosen: number[], total: number) => {
+    if (total === roll && chosen.length > 0) sums.push(chosen)
+    if (total >= roll || chosen.length >= limit) return
+    for (let i = start; i < sorted.length; i++) walk(i + 1, [...chosen, sorted[i]], total + sorted[i])
+  }
+  walk(0, [], 0)
+  const diffs: number[][] = []
+  if (r.allowDifference)
+    for (let i = 0; i < sorted.length; i++)
+      for (let j = i + 1; j < sorted.length; j++) if (sorted[j] - sorted[i] === roll) diffs.push([sorted[i], sorted[j]])
+  return [...sums, ...diffs].sort((a, b) => a.length - b.length)
+}
+
+/** The most pins one knock can take for this roll, 0 if none. */
+export function bestKnock(roll: number, standing: readonly number[], r: Knock): number {
+  return waysToMake(roll, standing, r).reduce((m, w) => Math.max(m, w.length), 0)
+}
+
+/** Every total the standing pins can make within the dice's range, ascending. */
+export function achievable(standing: readonly number[], r: Pick<PinsRules, 'dice'> & Knock): number[] {
+  const [lo, hi] = rollRange(r.dice)
+  const out: number[] = []
+  for (let t = lo; t <= hi; t++) if (waysToMake(t, standing, r).length > 0) out.push(t)
   return out
 }
 

@@ -22,4 +22,7 @@
 .mg-pins .mg-pin.mg-down { transform: rotate(70deg); opacity: 0.35; pointer-events: none; }
 .mg-pins .mg-pin.mg-wrong { animation: mg-shake 300ms; background: #fde3e0; }
 .mg-pins.mg-done .mg-roll { transform: scale(1.06); transition: transform 250ms ease; }
+/* A strike: the knock took every pin it could. The lane glows gold for a beat. */
+.mg-pins.mg-strike .mg-lane { animation: mg-strike 700ms ease; }
+@keyframes mg-strike { 30% { background: var(--mg-found, #f9dfc0); box-shadow: 0 0 0 6px var(--mg-found, #f9dfc0); } }
 @keyframes mg-shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }

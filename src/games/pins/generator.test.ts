@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { mulberry32, randInt } from '../../engine/rng'
-import { achievable, allPins, generateRoll, rackRows, rollRange, waysToMake } from './generator'
+import { achievable, allPins, bestKnock, generateRoll, maxPinsPerKnock, rackRows, rollRange, waysToMake } from './generator'
 import { pinsRules, presets, type PinsRules } from './rules'
 
 /** A random non-empty subset of the rack, so rolls are tested against every kind of board state. */
@@ -41,6 +41,19 @@ describe('pins generator', () => {
     expect(achievable([], { dice: 1, allowDifference: true })).toEqual([])
     expect(waysToMake(5, [1, 2, 3, 4, 5, 7], { allowDifference: false })).toEqual([[5], [1, 4], [2, 3]])
     expect(waysToMake(5, [2, 7], { allowDifference: true })).toEqual([[2, 7]])
+  })
+
+  it('with manyPins any set of pins may add to the roll, and bestKnock counts the biggest', () => {
+    const many = { allowDifference: false, manyPins: true }
+    expect(waysToMake(6, [1, 2, 3, 4, 6], many)).toEqual([[6], [2, 4], [1, 2, 3]])
+    expect(waysToMake(6, [1, 2, 3, 4, 6], { allowDifference: false })).toEqual([[6], [2, 4]])
+    expect(bestKnock(6, [1, 2, 3, 4, 6], many)).toBe(3)
+    expect(bestKnock(6, [1, 2, 3, 4, 6], { allowDifference: false })).toBe(2)
+    expect(bestKnock(11, [1, 2, 3], many)).toBe(0)
+    expect(achievable([1, 2, 4], { dice: 2, allowDifference: false })).toEqual([2, 3, 4, 5, 6])
+    expect(achievable([1, 2, 4], { dice: 2, ...many })).toEqual([2, 3, 4, 5, 6, 7])
+    expect(maxPinsPerKnock(many)).toBe(Infinity)
+    expect(maxPinsPerKnock({})).toBe(2)
   })
 
   it('returns null when the standing pins cannot make any roll', () => {
