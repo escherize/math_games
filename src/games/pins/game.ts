@@ -2,7 +2,9 @@
  * The Pins board: a Cartridge. A rack of numbered pins under a roll of one
  * or two dice. Tap the pin that matches the roll, or one pin and then
  * another that add to it (or, when allowed, differ by it): they fall and
- * the roll is solved. Fallen pins stay down across the round's puzzles and
+ * the roll is solved. With manyPins any set of pins that adds to the roll
+ * falls; picking past the roll is a wrong tap, and a knock that takes the
+ * most pins the rack allows is a strike. Fallen pins stay down across the round's puzzles and
  * only stand again when nothing standing can make a roll; each roll is
  * drawn from what the standing pins can make. Owns the taps and the
  * feedback under the finger; reports every tap and every solved puzzle to
@@ -13,7 +15,7 @@ import { dieSvg } from '../../engine/pictures'
 import { bondKey } from '../../engine/rules'
 import { distinct } from '../../engine/variety'
 import { el } from '../../ui/el'
-import { achievable, generateRoll, rackRows, type PinsPuzzle } from './generator'
+import { achievable, bestKnock, generateRoll, maxPinsPerKnock, rackRows, type PinsPuzzle } from './generator'
 import { pinsRules, type PinsRules } from './rules'
 import css from './board.css?inline'
 
@@ -51,7 +53,8 @@ export function mountPins(container: HTMLElement, host: Console<PinsRules>): Car
   const puzzleKey = (p: PinsPuzzle) => String(p.roll)
   const used = new Set<string>(host.avoid ?? [])
   let puzzle: PinsPuzzle | null = null
-  let picked: number | null = null
+  const picked = new Set<number>()
+  const limit = maxPinsPerKnock(rules)
   let wrong = 0
   let shownAt = 0
   let holding = false
@@ -78,9 +81,10 @@ export function mountPins(container: HTMLElement, host: Console<PinsRules>): Car
 
   function solve(values: number[], response: string, fact: string, ms: number) {
     knock(values)
-    picked = null
+    picked.clear()
     holding = true
     board.classList.add('mg-done')
+    if (rules.manyPins && values.length >= 2 && values.length === bestKnock(puzzle!.roll, [...values, ...standing()], rules)) board.classList.add('mg-strike')
     host.report({ type: 'tap', correct: true, fact, ms })
     host.report({ type: 'puzzle', index, of: host.puzzles, wrong, ms, response, key: puzzleKey(puzzle!) })
   }
@@ -91,40 +95,47 @@ export function mountPins(container: HTMLElement, host: Console<PinsRules>): Car
     if (b.classList.contains('mg-down')) return
     const ms = Date.now() - shownAt
     const roll = puzzle.roll
-    if (picked === value) {
-      picked = null
+    if (picked.has(value)) {
+      picked.delete(value)
       b.classList.remove('mg-picked')
       return
     }
-    if (picked === null) {
-      if (value === roll) {
-        solve([value], String(roll), String(roll), ms)
-        return
-      }
-      picked = value
-      b.classList.add('mg-picked')
+    const chosen = [...picked, value].sort((x, y) => x - y)
+    const total = chosen.reduce((s, v) => s + v, 0)
+    if (total === roll) {
+      solve(chosen, chosen.length === 1 ? String(roll) : `${roll}=${chosen.join('+')}`, factOf(chosen), ms)
       return
     }
-    const a = picked
-    const [lo, hi] = a < value ? [a, value] : [value, a]
-    if (lo + hi === roll) {
-      solve([a, value], `${roll}=${lo}+${hi}`, bondKey('add', lo, hi), ms)
-    } else if (rules.allowDifference && hi - lo === roll) {
-      solve([a, value], `${roll}=${hi}-${lo}`, bondKey('add', roll, lo), ms)
-    } else {
-      wrong++
-      picked = null
-      shake([a, value])
-      host.report({ type: 'tap', correct: false, fact: bondKey('add', lo, hi), ms })
+    if (chosen.length === 2 && rules.allowDifference && chosen[1] - chosen[0] === roll) {
+      solve(chosen, `${roll}=${chosen[1]}-${chosen[0]}`, bondKey('add', roll, chosen[0]), ms)
+      return
     }
+    // Past the roll (unless a second pin could still take away to it), or at the pin limit without making it: wrong, start over.
+    const mayStillDiffer = rules.allowDifference && chosen.length === 1
+    if ((total > roll && !mayStillDiffer) || chosen.length >= limit) {
+      wrong++
+      picked.clear()
+      shake(chosen)
+      host.report({ type: 'tap', correct: false, fact: factOf(chosen), ms })
+      return
+    }
+    picked.add(value)
+    b.classList.add('mg-picked')
+  }
+
+  /** Stats key: a lone pin is the number, two pins a bond, more pins their sum written out. */
+  function factOf(values: number[]): string {
+    if (values.length === 1) return String(values[0])
+    if (values.length === 2) return bondKey('add', values[0], values[1])
+    return values.join('+')
   }
 
   function show(i: number) {
     index = i
     holding = false
     wrong = 0
-    picked = null
-    board.classList.remove('mg-done')
+    picked.clear()
+    board.classList.remove('mg-done', 'mg-strike')
     for (const b of pinEls.values()) b.classList.remove('mg-picked')
     // The rack stands again only when nothing standing can make a roll.
     if (achievable(standing(), rules).length === 0) for (const b of pinEls.values()) b.classList.remove('mg-down')

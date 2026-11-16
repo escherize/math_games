@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest'
 import type { CartridgeEvent, Console } from '../../engine/cartridge'
+import { waysToMake } from './generator'
 import { pins } from './index'
 import { presets, type PinsRules } from './rules'
 
@@ -168,6 +169,53 @@ describe('pins cartridge', () => {
       }
     }
     expect(resets).toBeGreaterThan(1)
+  })
+
+  it('with manyPins three pins may fall together, going past the roll is wrong, and the biggest knock is a strike', () => {
+    const root = document.createElement('div')
+    const box = presets.find((p) => p.id === 'box')!.rules
+    const { host, events } = fakeConsole(Infinity, 5, box)
+    const handle = pins.mount(root, host)
+    const r = roll(root)
+    // Knock the pin above the roll first: nothing below it can bring the sum back, so it is wrong at once.
+    if (r < 10) {
+      pin(root, r + 1).click()
+      expect(events.at(-1)).toMatchObject({ type: 'tap', correct: false, fact: String(r + 1) })
+      expect(standing(root)).toHaveLength(10)
+    }
+    // Now 1 + 2 + (r - 3) when that is a distinct third pin, else the pair 1 + (r - 1).
+    const third = r - 3
+    if (third > 2 && third <= 10) {
+      pin(root, 1).click()
+      pin(root, 2).click()
+      expect(standing(root)).toHaveLength(10)
+      expect(root.querySelectorAll('.mg-pin.mg-picked')).toHaveLength(2)
+      pin(root, third).click()
+      expect(down(root).sort((a, b) => a - b)).toEqual([1, 2, third])
+      expect(puzzles(events).at(-1)).toMatchObject({ response: `${r}=1+2+${third}`, wrong: 1 })
+      expect(events.filter((e) => e.type === 'tap').at(-1)).toMatchObject({ correct: true, fact: `1+2+${third}` })
+    } else if (r === 2) {
+      pin(root, 2).click()
+      expect(down(root)).toEqual([2])
+    } else {
+      pin(root, 1).click()
+      pin(root, r - 1).click()
+      expect(down(root).sort((a, b) => a - b)).toEqual([1, r - 1])
+    }
+    expect(handle.next()).toBe(true)
+    handle.destroy()
+
+    const root2 = document.createElement('div')
+    const { host: h2 } = fakeConsole(1, 1, box)
+    pins.mount(root2, h2)
+    const r2 = roll(root2)
+    const up = standing(root2)
+    // The biggest knock the rack allows is a strike; a lone pin never is.
+    const ways = waysToMake(r2, up, box)
+    const chosen = ways[ways.length - 1]
+    for (const v of chosen) pin(root2, v).click()
+    expect(down(root2).sort((a, b) => a - b)).toEqual(chosen)
+    expect(root2.querySelector('.mg-board')!.classList.contains('mg-strike')).toBe(chosen.length >= 2)
   })
 
   it('plays a one-puzzle round the way Math Wiz asks for it', () => {
